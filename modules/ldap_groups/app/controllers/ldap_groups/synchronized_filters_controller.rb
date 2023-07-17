@@ -1,7 +1,7 @@
 module LdapGroups
   class SynchronizedFiltersController < ::ApplicationController
     before_action :require_admin
-    before_action :check_ee
+    # before_action :check_ee
     before_action :find_filter, except: %i[new create]
 
     layout 'admin'

@@ -31,7 +31,7 @@ class AttributeHelpTextsController < ApplicationController
   menu_item :attribute_help_texts
 
   before_action :require_admin
-  before_action :require_ee_token, except: %i[upsale]
+  # before_action :require_ee_token, except: %i[upsale]
   before_action :find_entry, only: %i(edit update destroy)
   before_action :find_type_scope
 

@@ -31,7 +31,7 @@ class CustomStylesController < ApplicationController
   menu_item :custom_style
 
   before_action :require_admin, except: %i[logo_download favicon_download touch_icon_download]
-  before_action :require_ee_token, except: %i[upsale logo_download favicon_download touch_icon_download]
+  # before_action :require_ee_token, except: %i[upsale logo_download favicon_download touch_icon_download]
   skip_before_action :check_if_login_required, only: %i[logo_download favicon_download touch_icon_download]
 
   def show

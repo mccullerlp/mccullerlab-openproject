@@ -84,7 +84,8 @@ class CustomActionsController < ApplicationController
   end
 
   def require_enterprise_token
-    return if EnterpriseToken.allows_to?(:custom_actions)
+    return
+    # if EnterpriseToken.allows_to?(:custom_actions)
 
     if request.get?
       render template: 'common/upsale',
