@@ -26,27 +26,28 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
+
+# attribute_help_texts
+# board_view
+# conditional_highlighting
+# custom_actions
+# custom_fields_in_projects_list
+# date_alerts
+# define_custom_style
+# edit_attribute_groups
+# grid_widget_wp_graph
+# ldap_groups
+# multiselect_custom_fields
+# openid_providers
+# placeholder_users
+# readonly_work_packages
+# team_planner_view
+# two_factor_authentication
+# work_package_query_relation_columns
 class Authorization::EnterpriseService
   attr_accessor :token
 
   GUARDED_ACTIONS = %i(
-    attribute_help_texts
-    board_view
-    conditional_highlighting
-    custom_actions
-    custom_fields_in_projects_list
-    date_alerts
-    define_custom_style
-    edit_attribute_groups
-    grid_widget_wp_graph
-    ldap_groups
-    multiselect_custom_fields
-    openid_providers
-    placeholder_users
-    readonly_work_packages
-    team_planner_view
-    two_factor_authentication
-    work_package_query_relation_columns
   ).freeze
 
   def initialize(token)
