@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'contracts/shared/model_contract_shared_context'
 
-RSpec.describe Backups::CreateContract do
+describe Backups::CreateContract do
   let(:backup) { Backup.new }
   let(:contract) { described_class.new backup, current_user, options: { backup_token: backup_token.plain_value } }
   let(:backup_token) { create(:backup_token, user: current_user) }
