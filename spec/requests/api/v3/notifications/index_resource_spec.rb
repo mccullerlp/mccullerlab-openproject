@@ -28,8 +28,8 @@
 require 'spec_helper'
 require 'rack/test'
 
-describe API::V3::Notifications::NotificationsAPI,
-         'index', content_type: :json do
+RSpec.describe API::V3::Notifications::NotificationsAPI,
+               'index', content_type: :json do
   include API::V3::Utilities::PathHelper
 
   shared_let(:work_package) { create(:work_package) }
@@ -160,7 +160,7 @@ describe API::V3::Notifications::NotificationsAPI,
       end
     end
 
-    context 'with a reason filter', with_ee: [:date_alerts] do
+    context 'with a reason filter', with_ee: %i[date_alerts] do
       shared_let(:assigned_notification) do
         create(:notification,
                reason: :assigned,
@@ -239,7 +239,7 @@ describe API::V3::Notifications::NotificationsAPI,
     end
 
     context 'with a non ian notification' do
-      shared_let(:wiki_page) { create(:wiki_page_with_content) }
+      shared_let(:wiki_page) { create(:wiki_page) }
 
       shared_let(:non_ian_notification) do
         create(:notification,
@@ -247,7 +247,7 @@ describe API::V3::Notifications::NotificationsAPI,
                recipient:,
                resource: wiki_page,
                project: wiki_page.wiki.project,
-               journal: wiki_page.content.journals.first)
+               journal: wiki_page.journals.first)
       end
 
       it_behaves_like 'API V3 collection response', 2, 2, 'Notification' do
@@ -340,6 +340,25 @@ describe API::V3::Notifications::NotificationsAPI,
       end
 
       it_behaves_like 'API V3 collection response', 0, 0, 'Notification'
+    end
+
+    context 'when signaling' do
+      let(:select) { 'total,count' }
+      let(:send_request) do
+        get api_v3_paths.path_for :notifications, select:
+      end
+
+      let(:expected) do
+        {
+          total: 2,
+          count: 2
+        }
+      end
+
+      it 'is the reduced set of properties of the embedded elements' do
+        expect(last_response.body)
+          .to be_json_eql(expected.to_json)
+      end
     end
   end
 

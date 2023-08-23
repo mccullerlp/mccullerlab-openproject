@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe API::V3::Configuration::ConfigurationRepresenter do
+RSpec.describe API::V3::Configuration::ConfigurationRepresenter do
   include API::V3::Utilities::PathHelper
 
   let(:represented) { Setting }
@@ -182,6 +182,24 @@ describe API::V3::Configuration::ConfigurationRepresenter do
           expect(subject)
             .to be_json_eql('MMMM DD, YYYY'.to_json)
             .at_path('dateFormat')
+        end
+      end
+    end
+
+    describe 'user_default_timezone' do
+      context 'without a setting', with_settings: { user_default_timezone: nil } do
+        it 'is null' do
+          expect(subject)
+            .to be_json_eql(nil.to_json)
+            .at_path('userDefaultTimezone')
+        end
+      end
+
+      context 'with `Europe/Berlin` being set', with_settings: { user_default_timezone: 'Europe/Berlin' } do
+        it 'indicates the dateFormat' do
+          expect(subject)
+            .to be_json_eql('Europe/Berlin'.to_json)
+            .at_path('userDefaultTimezone')
         end
       end
     end

@@ -28,12 +28,12 @@
 
 require 'spec_helper'
 
-describe GlobalRole do
+RSpec.describe GlobalRole do
   before { GlobalRole.create name: 'globalrole', permissions: ['permissions'] }
 
   it { is_expected.to validate_presence_of :name }
   it { is_expected.to validate_uniqueness_of :name }
-  it { is_expected.to validate_length_of(:name).is_at_most(30) }
+  it { is_expected.to validate_length_of(:name).is_at_most(256) }
 
   describe 'attributes' do
     before { @role = GlobalRole.new }

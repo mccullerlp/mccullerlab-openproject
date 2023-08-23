@@ -27,9 +27,12 @@
 #++
 
 require 'spec_helper'
-require_relative './../../support/onboarding/onboarding_steps'
+require_relative '../../support/onboarding/onboarding_steps'
 
-describe 'team planner onboarding tour', js: true do
+RSpec.describe 'team planner onboarding tour',
+               js: true,
+               with_cuprite: false,
+               with_ee: %i[team_planner_view] do
   let(:next_button) { find('.enjoyhint_next_btn') }
 
   let(:demo_project) do
@@ -74,7 +77,6 @@ describe 'team planner onboarding tour', js: true do
 
   before do
     team_plan
-    with_enterprise_token :team_planner_view
     login_as user
 
     allow(Setting).to receive(:demo_projects_available).and_return(true)

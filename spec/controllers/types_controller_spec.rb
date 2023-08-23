@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe TypesController do
+RSpec.describe TypesController do
   let(:project) do
     create(:project,
            work_package_custom_fields: [custom_field_2])
@@ -300,19 +300,45 @@ describe TypesController do
     end
 
     describe 'POST move' do
-      let!(:type) { create(:type, name: 'My type', position: '1') }
-      let!(:type2) { create(:type, name: 'My type 2', position: '2') }
-      let(:params) { { 'id' => type.id, 'type' => { move_to: 'lower' } } }
+      context 'with a successful update' do
+        let!(:type) { create(:type, name: 'My type', position: '1') }
+        let!(:type2) { create(:type, name: 'My type 2', position: '2') }
+        let(:params) { { 'id' => type.id, 'type' => { move_to: 'lower' } } }
 
-      before do
-        post :move, params:
+        before do
+          post :move, params:
+        end
+
+        it { expect(response).to be_redirect }
+        it { expect(response).to redirect_to(types_path) }
+
+        it 'has the position updated' do
+          expect(Type.find_by(name: 'My type').position).to eq(2)
+        end
       end
 
-      it { expect(response).to be_redirect }
-      it { expect(response).to redirect_to(types_path) }
+      context 'with a failed update' do
+        let!(:type) { create(:type, name: 'My type', position: '1') }
+        let!(:type2) { create(:type, name: 'My type 2', position: '2') }
+        let(:params) { { 'id' => type.id, 'type' => { move_to: 'lower' } } }
 
-      it 'has the position updated' do
-        expect(Type.find_by(name: 'My type').position).to eq(2)
+        before do
+          allow(Type).to receive(:find).and_return(type)
+          allow(type).to receive(:update).and_return false
+
+          post :move, params:
+        end
+
+        it { expect(response).not_to be_redirect }
+        it { expect(response).to render_template('edit') }
+
+        it 'has an unsuccessful move flash' do
+          expect(flash[:error]).to eq(I18n.t(:error_type_could_not_be_saved))
+        end
+
+        it "doesn't update the position" do
+          expect(Type.find_by(name: 'My type').position).to eq(1)
+        end
       end
     end
 
@@ -341,9 +367,9 @@ describe TypesController do
       end
 
       describe 'destroy type in use should fail' do
-        let(:project2) do
+        let(:archived_project) do
           create(:project,
-                 active: false,
+                 :archived,
                  work_package_custom_fields: [custom_field_2],
                  types: [type2])
         end
@@ -351,9 +377,19 @@ describe TypesController do
           create(:work_package,
                  author: current_user,
                  type: type2,
-                 project: project2)
+                 project: archived_project)
         end
         let(:params) { { 'id' => type2.id } }
+
+        let(:error_message) do
+          archived_projects_urls = described_class
+                                     .helpers
+                                     .archived_projects_urls_for([archived_project])
+          [
+            I18n.t(:'error_can_not_delete_type.explanation'),
+            I18n.t(:error_can_not_delete_in_use_archived_work_packages, archived_projects_urls:)
+          ]
+        end
 
         before do
           delete :destroy, params:
@@ -363,10 +399,6 @@ describe TypesController do
         it { expect(response).to redirect_to(types_path) }
 
         it 'shows an error message' do
-          error_message = [I18n.t(:'error_can_not_delete_type.explanation')]
-          error_message.push(I18n.t(:'error_can_not_delete_type.archived_projects',
-                                    archived_projects: project2.name))
-
           expect(sanitize_string(flash[:error])).to eq(sanitize_string(error_message))
         end
 

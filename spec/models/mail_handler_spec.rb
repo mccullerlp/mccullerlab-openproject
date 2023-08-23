@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe MailHandler do
+RSpec.describe MailHandler do
   let(:anno_user) { User.anonymous }
   let(:project) { create(:valid_project, identifier: 'onlinestore', name: 'OnlineStore', public: false) }
   let(:public_project) { create(:valid_project, identifier: 'onlinestore', name: 'OnlineStore', public: true) }
@@ -539,7 +539,8 @@ describe MailHandler do
 
     context 'when sending a mail not as a reply' do
       context 'for a given project' do
-        let!(:status) { create(:status, name: 'Resolved') }
+        let(:type) { project.types.first }
+        let!(:status) { create(:status, name: 'Resolved', workflow_for_type: type) }
         let!(:version) { create(:version, name: 'alpha', project:) }
 
         include_context 'for wp_on_given_project' do
@@ -555,7 +556,7 @@ describe MailHandler do
 
         it 'sets the first type in the project' do
           expect(subject.type)
-            .to eql(project.types.first)
+            .to eql(type)
         end
 
         it 'sets the subject' do
@@ -923,7 +924,8 @@ describe MailHandler do
       end
 
       context 'for wp with status' do
-        let!(:status) { create(:status, name: 'Resolved') }
+        let(:type) { project.types.first }
+        let!(:status) { create(:status, name: 'Resolved', workflow_for_type: type) }
 
         # This email contains: 'Project: onlinestore' and 'Status: Resolved'
         include_context 'for wp_on_given_project'
@@ -937,7 +939,8 @@ describe MailHandler do
       end
 
       context 'for wp with status case insensitive' do
-        let!(:status) { create(:status, name: 'Resolved') }
+        let(:type) { project.types.first }
+        let!(:status) { create(:status, name: 'Resolved', workflow_for_type: type) }
         let!(:priority_low) { create(:priority_low, name: 'Low', is_default: true) }
         let!(:version) { create(:version, name: 'alpha', project:) }
 

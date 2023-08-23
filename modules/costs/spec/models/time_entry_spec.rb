@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe TimeEntry do
+RSpec.describe TimeEntry do
   let(:project) { create(:project_with_types, public: false) }
   let(:project2) { create(:project_with_types, public: false) }
   let(:work_package) do
@@ -108,7 +108,7 @@ describe TimeEntry do
     end
   end
 
-  it 'alwayses prefer overridden_costs' do
+  it 'always prefers overridden_costs' do
     allow(User).to receive(:current).and_return(user)
 
     value = rand(500)

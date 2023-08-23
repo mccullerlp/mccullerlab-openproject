@@ -28,37 +28,24 @@
 
 require 'spec_helper'
 
-describe Query do
+RSpec.describe Query,
+               with_ee: %i[baseline_comparison conditional_highlighting work_package_query_relation_columns] do
   let(:query) { build(:query) }
   let(:project) { create(:project) }
-  let(:relation_columns_allowed) { true }
-  let(:conditional_highlighting_allowed) { true }
-
-  before do
-    allow(EnterpriseToken)
-      .to receive(:allows_to?)
-      .with(:work_package_query_relation_columns)
-      .and_return(relation_columns_allowed)
-
-    allow(EnterpriseToken)
-      .to receive(:allows_to?)
-      .with(:conditional_highlighting)
-      .and_return(conditional_highlighting_allowed)
-  end
 
   describe '.new_default' do
     it 'set the default sortation' do
       query = described_class.new_default
 
       expect(query.sort_criteria)
-        .to match_array([['id', 'asc']])
+        .to contain_exactly(['id', 'asc'])
     end
 
     it 'does not use the default sortation if an order is provided' do
       query = described_class.new_default(sort_criteria: [['id', 'asc']])
 
       expect(query.sort_criteria)
-        .to match_array([['id', 'asc']])
+        .to contain_exactly(['id', 'asc'])
     end
 
     context 'with global subprojects include', with_settings: { display_subprojects_work_packages: true } do
@@ -121,6 +108,124 @@ describe Query do
     end
   end
 
+  describe 'timestamps' do
+    subject { build(:query, timestamps:) }
+
+    context 'with EE', with_ee: %i[baseline_comparison] do
+      Timestamp::ALLOWED_DATE_KEYWORDS.each do |timestamp_date_keyword|
+        context "when the '#{timestamp_date_keyword}' value is provided" do
+          let(:timestamps) { ["#{timestamp_date_keyword}@12:00+00:00"] }
+
+          it { is_expected.to be_valid }
+        end
+      end
+
+      context "when the shortcut value 'now' is provided" do
+        let(:timestamps) { ["now"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when a duration value is provided" do
+        let(:timestamps) { ["P-2D"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when an iso8601 datetime value is provided" do
+        let(:timestamps) { [1.week.ago.iso8601] }
+
+        it { is_expected.to be_valid }
+      end
+    end
+
+    context 'without EE', with_ee: false do
+      context "when the 'oneDayAgo' value is provided" do
+        let(:timestamps) { ["oneDayAgo@12:00+00:00"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when the 'oneDayAgo' with a timezone is provided" do
+        let(:timestamps) { ["oneDayAgo@00:00+09:00"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when the shortcut value 'now' is provided" do
+        let(:timestamps) { ["now"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when the 'PT0S' duration value is provided" do
+        let(:timestamps) { ["PT0S"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when the 'P-1D' duration value is provided" do
+        let(:timestamps) { ["P-1D"] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when an iso8601 datetime value from yesterday is provided" do
+        let(:timestamps) { [1.day.ago.beginning_of_day.iso8601] }
+
+        it { is_expected.to be_valid }
+      end
+
+      context "when the 'lastWorkingDay' value is provided and it's yesterday" do
+        let(:timestamps) { "lastWorkingDay@00:00+00:00" }
+
+        it { is_expected.to be_valid }
+      end
+
+      Timestamp::ALLOWED_DATE_KEYWORDS[2..].each do |timestamp_date_keyword|
+        context "when the '#{timestamp_date_keyword}' value is provided" do
+          let(:timestamps) { ["#{timestamp_date_keyword}@12:00+00:00"] }
+
+          it 'is invalid' do
+            expect(subject).not_to be_valid
+            expect(subject.errors.symbols_for(:timestamps)).to eq [:forbidden]
+          end
+        end
+      end
+
+      context "when the 'lastWorkingDay' value is provided and it's before yesterday" do
+        let(:timestamps) { "lastWorkingDay@00:00+00:00" }
+
+        before do
+          allow(Day).to receive(:last_working) { Day.new(date: 7.days.ago) }
+        end
+
+        it 'is invalid' do
+          expect(subject).not_to be_valid
+          expect(subject.errors.symbols_for(:timestamps)).to eq [:forbidden]
+        end
+      end
+
+      context "when a duration value older than yesterday is provided" do
+        let(:timestamps) { ["P-2D"] }
+
+        it 'is invalid' do
+          expect(subject).not_to be_valid
+          expect(subject.errors.symbols_for(:timestamps)).to eq [:forbidden]
+        end
+      end
+
+      context "when an iso8601 datetime value older than yesterday is provided" do
+        let(:timestamps) { [2.days.ago.end_of_day.iso8601] }
+
+        it 'is invalid' do
+          expect(subject).not_to be_valid
+          expect(subject.errors.symbols_for(:timestamps)).to eq [:forbidden]
+        end
+      end
+    end
+  end
+
   describe 'highlighting' do
     context 'with EE' do
       it '#highlighted_attributes accepts valid values' do
@@ -179,9 +284,7 @@ describe Query do
       end
     end
 
-    context 'without EE' do
-      let(:conditional_highlighting_allowed) { false }
-
+    context 'without EE', with_ee: false do
       it 'always returns :none as highlighting_mode' do
         query.highlighting_mode = 'status'
         expect(query.highlighting_mode).to eq(:none)
@@ -316,9 +419,7 @@ describe Query do
           expect(query.displayable_columns.map(&:name)).not_to include :"relations_to_type_#{type_not_in_project.id}"
         end
 
-        context 'with the enterprise token disallowing relation columns' do
-          let(:relation_columns_allowed) { false }
-
+        context 'with the enterprise token disallowing relation columns', with_ee: false do
           it 'excludes the relation columns' do
             expect(query.displayable_columns.map(&:name)).not_to include :"relations_to_type_#{type_in_project.id}"
           end
@@ -335,9 +436,7 @@ describe Query do
                                                                    :"relations_to_type_#{type_not_in_project.id}")
         end
 
-        context 'with the enterprise token disallowing relation columns' do
-          let(:relation_columns_allowed) { false }
-
+        context 'with the enterprise token disallowing relation columns', with_ee: false do
           it 'excludes the relation columns' do
             expect(query.displayable_columns.map(&:name)).not_to include(:"relations_to_type_#{type_in_project.id}",
                                                                          :"relations_to_type_#{type_not_in_project.id}")
@@ -358,9 +457,7 @@ describe Query do
                                                                  :relations_of_type_relation2)
       end
 
-      context 'with the enterprise token disallowing relation columns' do
-        let(:relation_columns_allowed) { false }
-
+      context 'with the enterprise token disallowing relation columns', with_ee: false do
         it 'excludes the relation columns' do
           expect(query.displayable_columns.map(&:name)).not_to include(:relations_of_type_relation1,
                                                                        :relations_of_type_relation2)
@@ -411,9 +508,7 @@ describe Query do
       end
     end
 
-    context 'with the enterprise token disallowing relation columns' do
-      let(:relation_columns_allowed) { false }
-
+    context 'with the enterprise token disallowing relation columns', with_ee: false do
       it 'has all static columns, cf columns but no relation columns' do
         expected_columns = %i(id project assigned_to author
                               category created_at due_date estimated_hours
@@ -432,19 +527,13 @@ describe Query do
   end
 
   describe '#valid?' do
-    it 'is not valid without a name' do
-      query.name = ''
-      expect(query.save).to be_falsey
-      expect(query.errors[:name].first).to include(I18n.t('activerecord.errors.messages.blank'))
-    end
-
     context 'with a missing value and an operator that requires values' do
       before do
         query.add_filter('due_date', 't-', [''])
       end
 
       it 'is not valid and creates an error' do
-        expect(query.valid?).to be_falsey
+        expect(query).not_to be_valid
         expect(query.errors[:base].first).to include(I18n.t('activerecord.errors.messages.blank'))
       end
     end
@@ -480,7 +569,7 @@ describe Query do
       end
 
       it 'is not valid' do
-        expect(query.valid?).to be_falsey
+        expect(query).not_to be_valid
       end
     end
   end
@@ -488,7 +577,7 @@ describe Query do
   describe '#valid_subset!' do
     let(:valid_status) { build_stubbed(:status) }
 
-    context 'filters' do
+    context 'with filters' do
       before do
         allow(Status)
           .to receive(:all)
@@ -513,7 +602,7 @@ describe Query do
 
         it 'leaves only the valid value' do
           expect(query.filters[0].values)
-            .to match_array [valid_status.id.to_s]
+            .to contain_exactly(valid_status.id.to_s)
         end
       end
 
@@ -541,7 +630,7 @@ describe Query do
       end
     end
 
-    context 'group_by' do
+    context 'with group_by' do
       before do
         query.group_by = group_by
       end
@@ -567,7 +656,7 @@ describe Query do
       end
     end
 
-    context 'sort_criteria' do
+    context 'with sort_criteria' do
       before do
         query.sort_criteria = sort_by
       end
@@ -597,7 +686,7 @@ describe Query do
 
         it 'is valid' do
           expect(query).to be_valid
-          expect(query.sort_criteria).to match_array [['id', 'asc'], ['start_date', 'asc']]
+          expect(query.sort_criteria).to contain_exactly(['id', 'asc'], ['start_date', 'asc'])
         end
       end
 
@@ -607,12 +696,12 @@ describe Query do
         it 'removes the offending values from sort' do
           query.valid_subset!
 
-          expect(query.sort_criteria).to match_array [['project', 'desc']]
+          expect(query.sort_criteria).to contain_exactly(['project', 'desc'])
         end
       end
     end
 
-    context 'columns' do
+    context 'with columns' do
       before do
         query.column_names = columns
       end
@@ -646,12 +735,12 @@ describe Query do
           query.valid_subset!
 
           expect(query.column_names)
-            .to match_array [:status]
+            .to contain_exactly(:status)
         end
       end
     end
 
-    context 'highlighted_attributes' do
+    context 'with highlighted_attributes' do
       let(:highlighted_attributes) { %i{status priority due_date foo} }
 
       before do
@@ -663,6 +752,31 @@ describe Query do
 
         expect(query.highlighted_attributes)
           .to match_array %i{status priority due_date}
+      end
+    end
+
+    context 'with timestamps' do
+      let(:timestamps) do
+        [3.weeks.ago.iso8601, 'oneWeekAgo@12:00+00:00', 'oneDayAgo@12:00+00:00', 'PT0S']
+      end
+
+      before do
+        query.timestamps = timestamps
+        query.valid_subset!
+      end
+
+      context 'without EE', with_ee: false do
+        it 'removes the forbidden values' do
+          expect(query.timestamps)
+          .to match_array %w{oneDayAgo@12:00+00:00 PT0S}
+        end
+      end
+
+      context 'with EE', with_ee: %i[baseline_comparison] do
+        it 'allows all valid values' do
+          expect(query.timestamps)
+            .to match_array timestamps
+        end
       end
     end
   end
@@ -692,6 +806,23 @@ describe Query do
       query.reload
       query.filters.each do |filter|
         expect(filter.context).to eql(query)
+      end
+    end
+  end
+
+  describe '#remove_filter' do
+    context 'if the filter exists' do
+      it 'removes the filter' do
+        # Works because status_id is there by default
+        expect { query.remove_filter('status_id') }
+          .to change { query.filters.count }.by(-1)
+      end
+    end
+
+    context 'if the filter does not exist' do
+      it 'is a noop' do
+        expect { query.remove_filter('assigned_to_id') }
+          .not_to change { query.filters.count }
       end
     end
   end
@@ -756,6 +887,34 @@ describe Query do
       end
 
       it_behaves_like 'does not add a subproject id filter'
+    end
+  end
+
+  describe 'ical tokens' do
+    let(:user) { create(:user) }
+    let(:query) { create(:query, user:) }
+
+    context 'when present' do
+      let(:ical_token) { create(:ical_token, user:, query:, name: "Some Token") }
+
+      it 'can be accessed via relation' do
+        expect(query.ical_tokens).to contain_exactly(ical_token)
+      end
+
+      it 'are destroyed when query is destroyed' do
+        expect do
+          query.destroy!
+        end.to change { Token::ICal.where(id: ical_token.id).count }.by(-1)
+        expect(ICalTokenQueryAssignment.all).to be_empty
+      end
+    end
+
+    context 'when not present' do
+      it 'do not cause errors on query.destroy' do
+        expect do
+          query.destroy!
+        end.not_to raise_error
+      end
     end
   end
 end

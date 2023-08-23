@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe API::V3::Queries::Schemas::QuerySchemaRepresenter do
+RSpec.describe API::V3::Queries::Schemas::QuerySchemaRepresenter do
   include API::V3::Utilities::PathHelper
 
   let(:query) do
@@ -268,6 +268,18 @@ describe API::V3::Queries::Schemas::QuerySchemaRepresenter do
         it_behaves_like 'has basic schema properties' do
           let(:type) { 'QueryTimelineLabels' }
           let(:name) { Query.human_attribute_name('timeline_labels') }
+          let(:required) { false }
+          let(:writable) { true }
+          let(:has_default) { true }
+        end
+      end
+
+      describe 'timestamps' do
+        let(:path) { 'timestamps' }
+
+        it_behaves_like 'has basic schema properties' do
+          let(:type) { '[]Timestamp' }
+          let(:name) { Query.human_attribute_name('timestamps') }
           let(:required) { false }
           let(:writable) { true }
           let(:has_default) { true }

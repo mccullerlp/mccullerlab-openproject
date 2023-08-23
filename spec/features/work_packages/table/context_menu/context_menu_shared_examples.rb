@@ -1,12 +1,12 @@
 require 'spec_helper'
 
-shared_examples_for 'provides a single WP context menu' do
+RSpec.shared_examples_for 'provides a single WP context menu' do
   let(:open_context_menu) { raise 'needs to be defined' }
   let(:destroy_modal) { Components::WorkPackages::DestroyModal.new }
   let(:time_logging_modal) { Components::TimeLoggingModal.new }
   let(:wp_timeline) { Pages::WorkPackagesTimeline.new(work_package.project) }
 
-  it 'provide a context menu' do
+  it 'provides a context menu' do
     # Open detail pane
     open_context_menu.call
     menu.choose('Open details view')

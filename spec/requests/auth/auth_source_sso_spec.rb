@@ -28,9 +28,9 @@
 
 require 'spec_helper'
 
-describe AuthSourceSSO,
-         skip_2fa_stage: true, # Prevent redirects to 2FA stage
-         type: :rails_request do
+RSpec.describe AuthSourceSSO,
+               skip_2fa_stage: true, # Prevent redirects to 2FA stage
+               type: :rails_request do
   let(:sso_config) do
     {
       header: "X-Remote-User",
@@ -38,8 +38,8 @@ describe AuthSourceSSO,
     }
   end
 
-  let(:auth_source) { create(:auth_source) }
-  let(:user) { create(:user, login: 'bob', auth_source:) }
+  let(:ldap_auth_source) { create(:ldap_auth_source) }
+  let(:user) { create(:user, login: 'bob', ldap_auth_source:) }
 
   before do
     allow(OpenProject::Configuration)

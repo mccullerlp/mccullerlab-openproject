@@ -30,7 +30,7 @@ require 'spec_helper'
 require_relative './support/board_index_page'
 require_relative './support/board_page'
 
-describe 'Board remote changes resolution', js: true do
+RSpec.describe 'Board remote changes resolution', js: true, with_ee: %i[board_view] do
   let(:user1) do
     create(:user,
            member_in_project: project,
@@ -53,7 +53,6 @@ describe 'Board remote changes resolution', js: true do
   let!(:work_package2) { create(:work_package, project:, subject: 'Work package B', status: open_status) }
 
   before do
-    with_enterprise_token :board_view
     project
     login_as(user1)
   end
@@ -62,7 +61,7 @@ describe 'Board remote changes resolution', js: true do
     board_index.visit!
 
     # Create new board
-    board_page = board_index.create_board action: :Status
+    board_page = board_index.create_board action: 'Status'
 
     # expect lists of default status
     board_page.expect_list 'Open'

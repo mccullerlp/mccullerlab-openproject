@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg linking',
-         js: true do
+RSpec.describe 'Wysiwyg linking',
+               js: true do
   let(:user) { create(:admin) }
   let(:project) { create(:project, enabled_module_names: %w[wiki work_package_tracking]) }
   let(:editor) { Components::WysiwygEditor.new }
@@ -50,11 +50,11 @@ describe 'Wysiwyg linking',
       # Save wiki page
       click_on 'Save'
 
-      expect(page).to have_selector('.flash.notice')
+      expect(page).to have_selector('.op-toast.-success')
 
       wiki_page = project.wiki.pages.first.reload
 
-      expect(wiki_page.content.text).to eq(
+      expect(wiki_page.text).to eq(
         "[http://example.org/link with spaces](http://example.org/link%20with%20spaces)"
       )
 

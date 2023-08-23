@@ -28,15 +28,15 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg paragraphs in lists behavior (Regression #28765)',
-         js: true do
+RSpec.describe 'Wysiwyg paragraphs in lists behavior (Regression #28765)',
+               js: true do
   let(:user) { create(:admin) }
   let(:project) { create(:project, enabled_module_names: %w[wiki]) }
   let(:editor) { Components::WysiwygEditor.new }
 
   let(:wiki_page) do
-    page = build(:wiki_page_with_content)
-    page.content.text = <<~MARKDOWN
+    page = build(:wiki_page)
+    page.text = <<~MARKDOWN
       1. Step 1
          *Expected Results:* Expected 1
 

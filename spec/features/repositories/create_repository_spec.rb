@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'features/repositories/repository_settings_page'
 
-describe 'Create repository', js: true, selenium: true do
+RSpec.describe 'Create repository', js: true, selenium: true do
   let(:current_user) { create(:admin) }
   let(:project) { create(:project) }
   let(:settings_page) { RepositorySettingsPage.new(project) }
@@ -116,7 +116,7 @@ describe 'Create repository', js: true, selenium: true do
 
         content = find("##{vendor}-#{type}", visible: false)
         expect(content).not_to be_nil
-        expect(content[:style]).to match("display: none")
+        expect(content[:hidden]).to eq 'true'
       end
     end
 
@@ -131,7 +131,7 @@ describe 'Create repository', js: true, selenium: true do
         expect(content[:hidden]).to eql 'false'
         content = find("##{vendor}-#{type}", visible: false)
         expect(content).not_to be_nil
-        expect(content[:style]).not_to match("display: none")
+        expect(content[:hidden]).to eql 'false'
 
         find('input[type="radio"][value="managed"]').set(true)
         content = find_by_id('attributes-group--content-managed')
@@ -139,7 +139,7 @@ describe 'Create repository', js: true, selenium: true do
         expect(content[:hidden]).to eql 'false'
         content = find("##{vendor}-managed", visible: false)
         expect(content).not_to be_nil
-        expect(content[:style]).not_to match("display: none")
+        expect(content[:hidden]).to eql 'false'
       end
     end
 
@@ -149,7 +149,7 @@ describe 'Create repository', js: true, selenium: true do
 
         click_button(I18n.t(:button_create))
 
-        expect(page).to have_selector('div.flash.notice',
+        expect(page).to have_selector('div.op-toast.-success',
                                       text: I18n.t('repositories.create_successful'))
         expect(page).to have_selector('a.icon-delete', text: I18n.t(:button_delete))
       end
@@ -162,7 +162,7 @@ describe 'Create repository', js: true, selenium: true do
 
         click_button(I18n.t(:button_create))
 
-        expect(page).to have_selector('div.flash.notice',
+        expect(page).to have_selector('div.op-toast.-success',
                                       text: I18n.t('repositories.create_successful'))
         expect(page).to have_selector('button[type="submit"]', text: I18n.t(:button_save))
         expect(page).to have_selector('a.icon-remove', text: I18n.t(:button_remove))

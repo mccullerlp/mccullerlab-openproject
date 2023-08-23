@@ -27,10 +27,10 @@
 #++
 
 require 'spec_helper'
-require_relative './../support//board_index_page'
-require_relative './../support/board_page'
+require_relative '../support//board_index_page'
+require_relative '../support/board_page'
 
-describe 'Subtasks action board', js: true do
+RSpec.describe 'Subtasks action board', js: true, with_ee: %i[board_view] do
   let(:type) { create(:type_standard) }
   let(:project) { create(:project, types: [type], enabled_module_names: %i[work_package_tracking board_view]) }
   let(:role) { create(:role, permissions:) }
@@ -49,7 +49,6 @@ describe 'Subtasks action board', js: true do
   let!(:child) { create(:work_package, project:, subject: 'Child WP', parent:, status: open_status) }
 
   before do
-    with_enterprise_token :board_view
     login_as(user)
   end
 
@@ -63,7 +62,7 @@ describe 'Subtasks action board', js: true do
       board_index.visit!
 
       # Create new board
-      board_page = board_index.create_board action: :Parent_child, expect_empty: true
+      board_page = board_index.create_board action: 'Parent-child', expect_empty: true
 
       # Expect we can add a work package column
       board_page.add_list option: 'Parent WP'
@@ -87,7 +86,9 @@ describe 'Subtasks action board', js: true do
       board_index.visit!
 
       # Create new board
-      board_page = board_index.create_board action: :Parent_child, expect_empty: true
+      board_page = board_index.create_board title: 'My Parent-child Board',
+                                            action: 'Parent-child',
+                                            expect_empty: true
 
       # Expect we can add a child 1
       board_page.add_list option: 'Parent WP'
@@ -100,7 +101,7 @@ describe 'Subtasks action board', js: true do
       board_page.expect_movable 'Parent WP', 'Child', movable: true
 
       board_page.board(reload: true) do |board|
-        expect(board.name).to eq 'Action board (parent-child)'
+        expect(board.name).to eq 'My Parent-child Board'
         queries = board.contained_queries
         expect(queries.count).to eq(1)
 
@@ -158,7 +159,7 @@ describe 'Subtasks action board', js: true do
 
     it 'prevents adding a work package to its own column' do
       board_index.visit!
-      board_page = board_index.create_board action: :Parent_child, expect_empty: true
+      board_page = board_index.create_board action: 'Parent-child', expect_empty: true
       board_page.add_list option: 'Parent WP'
       board_page.expect_list 'Parent WP'
       board_page.expect_card 'Parent WP', 'Child'

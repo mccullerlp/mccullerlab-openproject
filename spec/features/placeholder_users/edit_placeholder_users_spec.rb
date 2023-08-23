@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'edit placeholder users', js: true do
+RSpec.describe 'edit placeholder users', js: true do
   shared_let(:placeholder_user) { create(:placeholder_user, name: 'UX Developer') }
 
   shared_examples 'placeholders edit flow' do
@@ -41,7 +41,7 @@ describe 'edit placeholder users', js: true do
 
       click_on 'Save'
 
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.')
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.')
 
       placeholder_user.reload
 

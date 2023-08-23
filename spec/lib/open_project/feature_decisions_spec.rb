@@ -27,7 +27,7 @@
 # ++
 require 'spec_helper'
 
-describe OpenProject::FeatureDecisions, :settings_reset do
+RSpec.describe OpenProject::FeatureDecisions, :settings_reset do
   let(:flag_name) { :example_flag }
 
   include_context 'with clean feature decisions'
@@ -38,10 +38,8 @@ describe OpenProject::FeatureDecisions, :settings_reset do
     end
   end
 
-  shared_context 'when adding with env variable set to true' do
+  shared_context 'when adding the given feature flag' do
     before do
-      stub_const('ENV', 'OPENPROJECT_FEATURE_EXAMPLE_FLAG_ACTIVE' => 'true')
-
       described_class.add flag_name
     end
   end
@@ -56,8 +54,9 @@ describe OpenProject::FeatureDecisions, :settings_reset do
       end
     end
 
-    context 'with an ENV variable (set to true)' do
-      include_context 'when adding with env variable set to true'
+    context 'with an ENV variable (set to true)',
+            with_env: { 'OPENPROJECT_FEATURE_EXAMPLE_FLAG_ACTIVE' => 'true' } do
+      include_context 'when adding the given feature flag'
 
       it 'is true' do
         expect(described_class.send("#{flag_name}_active?"))
@@ -83,8 +82,9 @@ describe OpenProject::FeatureDecisions, :settings_reset do
       end
     end
 
-    context 'with a flag defined that is enabled via env' do
-      include_context 'when adding with env variable set to true'
+    context 'with a flag defined that is enabled via env',
+            with_env: { 'OPENPROJECT_FEATURE_EXAMPLE_FLAG_ACTIVE' => 'true' } do
+      include_context 'when adding the given feature flag'
 
       it 'returns an empty array' do
         expect(described_class.active)

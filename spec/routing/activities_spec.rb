@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe ActivitiesController, 'routing' do
+RSpec.describe ActivitiesController, 'routing' do
   it {
     expect(get('/activity')).to route_to(controller: 'activities',
                                          action: 'index')
@@ -38,6 +38,10 @@ describe ActivitiesController, 'routing' do
     expect(get('/activity.atom')).to route_to(controller: 'activities',
                                               action: 'index',
                                               format: 'atom')
+  }
+  it {
+    expect(get('/activity/menu')).to route_to(controller: 'activities',
+                                              action: 'menu')
   }
 
   context 'project scoped' do
@@ -52,6 +56,12 @@ describe ActivitiesController, 'routing' do
                                                              action: 'index',
                                                              project_id: 'abc',
                                                              format: 'atom')
+    }
+
+    it {
+      expect(get('/projects/abc/activity/menu')).to route_to(controller: 'activities',
+                                                             action: 'menu',
+                                                             project_id: 'abc')
     }
   end
 end

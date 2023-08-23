@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg code block macro',
-         js: true do
+RSpec.describe 'Wysiwyg code block macro',
+               js: true do
   shared_let(:admin) { create(:admin) }
   let(:user) { admin }
   let(:project) { create(:project, enabled_module_names: %w[wiki]) }
@@ -75,7 +75,7 @@ describe 'Wysiwyg code block macro',
         end
 
         click_on 'Save'
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         # Expect output widget
         within('#content') do
@@ -107,10 +107,10 @@ describe 'Wysiwyg code block macro',
           expect(container).to have_selector('.op-uc-code-block', text: 'asdf')
 
           click_on 'Save'
-          expect(page).to have_selector('.flash.notice')
+          expect(page).to have_selector('.op-toast.-success')
 
           wp = WikiPage.last
-          expect(wp.content.text.gsub("\r\n", "\n")).to eq("```text\nasdf\n```")
+          expect(wp.text.gsub("\r\n", "\n")).to eq("```text\nasdf\n```")
 
           SeleniumHubWaiter.wait
           click_on 'Edit'
@@ -120,11 +120,11 @@ describe 'Wysiwyg code block macro',
           end
 
           click_on 'Save'
-          expect(page).to have_selector('.flash.notice')
+          expect(page).to have_selector('.op-toast.-success')
 
           wp.reload
           # Regression added two newlines before fence here
-          expect(wp.content.text.gsub("\r\n", "\n")).to eq("```text\nasdf\n```")
+          expect(wp.text.gsub("\r\n", "\n")).to eq("```text\nasdf\n```")
         end
       end
 
@@ -154,10 +154,10 @@ describe 'Wysiwyg code block macro',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         wiki_page = project.wiki.find_page('wiki')
-        text = wiki_page.content.text.gsub(/\r\n?/, "\n")
+        text = wiki_page.text.gsub(/\r\n?/, "\n")
         expect(text.strip).to eq(expected.strip)
 
         # Expect output widget

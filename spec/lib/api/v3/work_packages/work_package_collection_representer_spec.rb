@@ -28,11 +28,17 @@
 
 require 'spec_helper'
 
-describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
+RSpec.describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
   include API::V3::Utilities::PathHelper
+  create_shared_association_defaults_for_work_package_factory
 
   let(:self_base_link) { '/api/v3/example' }
-  let(:work_packages) { WorkPackage.all }
+  let(:work_packages) do
+    created_work_packages
+    WorkPackage.all
+  end
+  let(:created_work_packages) { create_list(:work_package, total) }
+  let(:first_wp) { work_packages.first }
   let(:user) { build_stubbed(:user) }
 
   let(:query_params) { {} }
@@ -47,6 +53,8 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
   let(:embed_schemas) { false }
   let(:timestamps) { nil }
   let(:query) { nil }
+  # nil in this context means "don't care". The user will be allowed any action
+  let(:permissions) { nil }
 
   let(:representer) do
     described_class.new(
@@ -66,12 +74,13 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
   end
   let(:collection_inner_type) { 'WorkPackage' }
 
+  current_user { user }
+
   before do
     allow(user)
-      .to receive(:allowed_to?)
-      .and_return(true)
-
-    create_list(:work_package, total)
+      .to receive(:allowed_to?) do |permission|
+      permissions.nil? || permissions.include?(permission)
+    end
   end
 
   subject(:collection) { representer.to_json }
@@ -80,7 +89,7 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
     describe 'self' do
       describe 'when providing timestamps' do
         let(:timestamps) { [Timestamp.parse("2022-01-01T00:00:00Z"), Timestamp.parse("PT0S")] }
-        let(:absolute_timestamp_strings) { timestamps.collect { |timestamp| timestamp.absolute.iso8601 } }
+        let(:absolute_timestamp_strings) { timestamps.collect(&:absolute) }
         let(:absolute_timestamps_query_param) { { timestamps: absolute_timestamp_strings.join(",") }.to_query }
 
         it 'has the absolute timestamps within the self link' do
@@ -116,13 +125,20 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
               href: work_packages_path({ format: 'pdf' }.merge(expected_query_params)),
               type: 'application/pdf',
               identifier: 'pdf',
-              title: I18n.t('export.format.pdf')
+              title: I18n.t('export.format.pdf_overview_table')
             },
             {
-              href: work_packages_path({ format: 'pdf', show_descriptions: true }.merge(expected_query_params)),
+              href: work_packages_path({ format: 'pdf', show_images: true, show_report: true }
+                                         .merge(expected_query_params)),
               identifier: 'pdf-with-descriptions',
               type: 'application/pdf',
-              title: I18n.t('export.format.pdf_with_descriptions')
+              title: I18n.t('export.format.pdf_report_with_images')
+            },
+            {
+              href: work_packages_path({ format: 'pdf', show_report: true }.merge(expected_query_params)),
+              identifier: 'pdf-descr',
+              type: 'application/pdf',
+              title: I18n.t('export.format.pdf_report')
             },
             {
               href: work_packages_path({ format: 'csv' }.merge(expected_query_params)),
@@ -159,13 +175,20 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
               href: project_work_packages_path(project, { format: 'pdf' }.merge(expected_query_params)),
               type: 'application/pdf',
               identifier: 'pdf',
-              title: I18n.t('export.format.pdf')
+              title: I18n.t('export.format.pdf_overview_table')
             },
             {
-              href: project_work_packages_path(project, { format: 'pdf', show_descriptions: true }.merge(expected_query_params)),
+              href: project_work_packages_path(project, { format: 'pdf', show_images: true, show_report: true }
+                                                          .merge(expected_query_params)),
               type: 'application/pdf',
               identifier: 'pdf-with-descriptions',
-              title: I18n.t('export.format.pdf_with_descriptions')
+              title: I18n.t('export.format.pdf_report_with_images')
+            },
+            {
+              href: project_work_packages_path(project, { format: 'pdf', show_report: true }.merge(expected_query_params)),
+              type: 'application/pdf',
+              identifier: 'pdf-descr',
+              title: I18n.t('export.format.pdf_report')
             },
             {
               href: project_work_packages_path(project, { format: 'csv' }.merge(expected_query_params)),
@@ -253,6 +276,29 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
     end
   end
 
+  describe '_embedded' do
+    describe 'elements' do
+      context 'for a work package that is not visible' do
+        let(:total) { 1 }
+        let(:permissions) { [] }
+
+        it 'renders a reduced WorkPackage element' do
+          expect(collection)
+            .to be_json_eql(
+              {
+                _type: 'WorkPackage',
+                _links: {
+                  self: {
+                    href: api_v3_paths.work_package(first_wp.id)
+                  }
+                }
+              }.to_json
+            ).at_path('_embedded/elements/0')
+        end
+      end
+    end
+  end
+
   it 'does not render groups' do
     expect(collection).not_to have_json_path('groups')
   end
@@ -262,11 +308,8 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
   end
 
   it 'has a schemas link' do
-    ids = work_packages.map do |wp|
-      [wp.project_id, wp.type_id]
-    end
-
-    path = api_v3_paths.work_package_schemas *ids
+    # All work packages in the collection are from the same project and have the same type
+    path = api_v3_paths.work_package_schemas [first_wp.project_id, first_wp.type_id]
 
     expect(collection)
       .to be_json_eql(path.to_json)
@@ -492,52 +535,84 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
   context 'when passing schemas' do
     let(:embed_schemas) { true }
 
-    it 'embeds a schema collection' do
-      expected_path = api_v3_paths.work_package_schema(work_packages[0].project.id,
-                                                       work_packages[0].type.id)
+    it 'embeds a schema collection', :aggregate_failures do
+      expected_path = api_v3_paths.work_package_schema(first_wp.project.id,
+                                                       first_wp.type.id)
 
       expect(collection)
         .to be_json_eql(expected_path.to_json)
         .at_path('_embedded/schemas/_embedded/elements/0/_links/self/href')
+
+      # All work packages share the same project and type
+      expect(collection)
+        .to have_json_size(1)
+              .at_path('_embedded/schemas/_embedded/elements')
+    end
+
+    context 'when having timestamps leads to a different schema at the baseline time (because of a different type)',
+            with_settings: { journal_aggregation_time_minutes: 0 } do
+      let(:other_type) { create(:type) }
+      let(:timestamps) { [Timestamp.parse("2023-01-01T00:00:00Z"), Timestamp.parse("PT0S")] }
+      let!(:member) do
+        create(:member,
+               user: current_user,
+               project: first_wp.project,
+               roles: create_list(:role, 1, permissions: [:view_work_packages]))
+      end
+      let(:created_work_packages) do
+        # Let the work package behave as if it used to have a different type forcing the inclusion of
+        # another schema and set the creation date to be before the baseline time.
+        create_list(:work_package,
+                    1,
+                    subject: 'Some new subject',
+                    journals: {
+                      DateTime.parse("2022-01-01T00:00:00Z") => { type_id: other_type.id },
+                      1.day.ago => {}
+                    })
+      end
+
+      it 'embeds a schema collection', :aggregate_failures do
+        expect(collection)
+          .to have_json_size(2)
+                .at_path('_embedded/schemas/_embedded/elements')
+
+        expected_former_path = api_v3_paths.work_package_schema(first_wp.project.id,
+                                                                other_type.id)
+        expect(collection)
+          .to be_json_eql(expected_former_path.to_json)
+                .at_path('_embedded/schemas/_embedded/elements/0/_links/self/href')
+
+        expected_current_path = api_v3_paths.work_package_schema(first_wp.project.id,
+                                                                 first_wp.type.id)
+        expect(collection)
+          .to be_json_eql(expected_current_path.to_json)
+                .at_path('_embedded/schemas/_embedded/elements/1/_links/self/href')
+      end
     end
   end
 
   context 'when passing timestamps' do
-    let(:work_pacakges) { WorkPackage.where(id: work_package.id) }
     let(:work_package) do
-      new_work_package = create(:work_package, subject: "The current work package", project:)
-      new_work_package.update_columns created_at: baseline_time - 1.day
-      new_work_package
+      create(:work_package,
+             subject: "The current work package",
+             assigned_to: current_user,
+             project:,
+             journals: {
+               baseline_time - 1.day => { subject: "The original work package" },
+               1.day.ago => {}
+             })
     end
-    let(:original_journal) do
-      create_journal(journable: work_package, timestamp: baseline_time - 1.day,
-                     version: 1,
-                     attributes: { subject: "The original work package" })
-    end
-    let(:current_journal) do
-      create_journal(journable: work_package, timestamp: 1.day.ago,
-                     version: 2,
-                     attributes: { subject: "The current work package" })
-    end
+    let(:created_work_packages) { [work_package] }
+    let(:original_journal) { work_package.journals.first }
+    let(:current_journal) { work_package.journals.last }
     let(:baseline_time) { "2022-01-01".to_time }
     let(:project) { create(:project) }
-
-    def create_journal(journable:, version:, timestamp:, attributes: {})
-      work_package_attributes = work_package.attributes.except("id")
-      journal_attributes = work_package_attributes \
-          .extract!(*Journal::WorkPackageJournal.attribute_names) \
-          .symbolize_keys.merge(attributes)
-      create(:work_package_journal, version:,
-                                    journable:, created_at: timestamp, updated_at: timestamp,
-                                    data: build(:journal_work_package_journal, journal_attributes))
-    end
-
-    before do
-      WorkPackage.destroy_all
-      work_package
-      Journal.destroy_all
-      original_journal
-      current_journal
+    let(:current_user) do
+      create(:user,
+             firstname: 'user',
+             lastname: '1',
+             member_in_project: project,
+             member_with_permissions: %i[view_work_packages])
     end
 
     shared_examples_for 'includes the properties of the current work package' do
@@ -563,7 +638,7 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
     end
 
     shared_examples_for 'has the absolute timestamps within the self link' do
-      let(:absolute_timestamp_strings) { timestamps.collect { |timestamp| timestamp.absolute.iso8601 } }
+      let(:absolute_timestamp_strings) { timestamps.collect(&:absolute) }
       let(:absolute_timestamps_query_param) { { timestamps: absolute_timestamp_strings.join(",") }.to_query }
 
       it 'has the absolute timestamps within the self link' do
@@ -620,22 +695,14 @@ describe API::V3::WorkPackages::WorkPackageCollectionRepresenter do
     context 'when passing a query' do
       let(:search_term) { 'original' }
       let(:query) do
-        login_as(current_user)
         build(:query, user: current_user, project: nil).tap do |query|
           query.filters.clear
           query.add_filter 'subject', '~', search_term
           query.timestamps = timestamps
         end
       end
-      let(:current_user) do
-        create(:user,
-               firstname: 'user',
-               lastname: '1',
-               member_in_project: project,
-               member_with_permissions: %i[view_work_packages view_file_links])
-      end
 
-      context 'with baseline and current timestamps' do
+      context 'with baseline and current timestamps', with_ee: %i[baseline_comparison] do
         let(:timestamps) { [Timestamp.parse("2022-01-01T00:00:00Z"), Timestamp.parse("PT0S")] }
 
         describe 'attributesByTimestamp' do

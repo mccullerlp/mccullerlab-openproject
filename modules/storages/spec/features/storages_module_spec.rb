@@ -28,7 +28,7 @@
 
 require_relative '../spec_helper'
 
-describe 'Storages module', js: true do
+RSpec.describe 'Storages module', js: true do
   current_user { create(:admin) }
 
   let(:role) { create(:role, permissions: %i[manage_storages_in_project select_project_modules edit_project]) }
@@ -118,7 +118,7 @@ describe 'Storages module', js: true do
     context 'when showing project storages settings page' do
       context 'with storages module is enabled' do
         before do
-          visit project_settings_projects_storages_path(project)
+          visit project_settings_project_storages_path(project)
         end
 
         it 'must show the page' do
@@ -130,7 +130,7 @@ describe 'Storages module', js: true do
         let(:project) { create(:project, enabled_module_names: %i[work_package_tracking]) }
 
         before do
-          visit project_settings_projects_storages_path(project)
+          visit project_settings_project_storages_path(project)
         end
 
         it 'mustn\'t show the page' do

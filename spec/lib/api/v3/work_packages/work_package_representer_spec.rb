@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe API::V3::WorkPackages::WorkPackageRepresenter do
+RSpec.describe API::V3::WorkPackages::WorkPackageRepresenter do
   include API::V3::Utilities::PathHelper
 
   let(:member) { build_stubbed(:user) }
@@ -1304,39 +1304,23 @@ describe API::V3::WorkPackages::WorkPackageRepresenter do
         let(:baseline_time) { Time.zone.parse("2022-01-01") }
         let(:work_pacakges) { WorkPackage.where(id: work_package.id) }
         let(:work_package) do
-          new_work_package = create(:work_package,
-                                    subject: "The current work package",
-                                    assigned_to: current_user,
-                                    project:)
-          new_work_package.update_columns created_at: baseline_time - 1.day
-          new_work_package
-        end
-        let(:original_journal) do
-          create_journal(journable: work_package, timestamp: baseline_time - 1.day,
-                         version: 1,
-                         attributes: {
-                           subject: "The original work package",
-                           assigned_to: current_user
-                         })
-        end
-        let(:current_journal) do
-          create_journal(journable: work_package, timestamp: 1.day.ago,
-                         version: 2,
-                         attributes: {
-                           subject: "The current work package",
-                           assigned_to: current_user
-                         })
+          create(:work_package,
+                 subject: "The current work package",
+                 assigned_to: current_user,
+                 project:,
+                 journals: {
+                   baseline_time - 1.day => { subject: "The original work package" },
+                   1.day.ago => {}
+                 })
         end
         let(:project) { create(:project) }
 
-        def create_journal(journable:, version:, timestamp:, attributes: {})
-          work_package_attributes = work_package.attributes.except("id")
-          journal_attributes = work_package_attributes \
-              .extract!(*Journal::WorkPackageJournal.attribute_names) \
-              .symbolize_keys.merge(attributes)
-          create(:work_package_journal, version:,
-                                        journable:, created_at: timestamp, updated_at: timestamp,
-                                        data: build(:journal_work_package_journal, journal_attributes))
+        current_user do
+          create(:user,
+                 firstname: 'user',
+                 lastname: '1',
+                 member_in_project: project,
+                 member_with_permissions: %i[view_work_packages view_file_links])
         end
 
         before do
@@ -1347,12 +1331,6 @@ describe API::V3::WorkPackages::WorkPackageRepresenter do
           allow(API::V3::WorkPackages::WorkPackageEagerLoadingWrapper)
             .to receive(:wrap_one)
             .and_call_original
-
-          WorkPackage.destroy_all
-          work_package
-          Journal.destroy_all
-          original_journal
-          current_journal
         end
 
         describe 'attributesByTimestamp' do
@@ -1382,7 +1360,7 @@ describe API::V3::WorkPackages::WorkPackageRepresenter do
               .at_path("_embedded/attributesByTimestamp/1/_links/self/href")
           end
 
-          it 'has no information about whether the work package matches the query filters at the timestamp' \
+          it 'has no information about whether the work package matches the query filters at the timestamp ' \
              'because there are no filters without a query' do
             expect(subject)
               .not_to have_json_path("_embedded/attributesByTimestamp/0/_meta/matchesFilters")
@@ -1403,22 +1381,14 @@ describe API::V3::WorkPackages::WorkPackageRepresenter do
         context 'when passing a query' do
           let(:search_term) { 'original' }
           let(:query) do
-            login_as(current_user)
             build(:query, user: current_user, project: nil).tap do |query|
               query.filters.clear
               query.add_filter 'subject', '~', search_term
               query.timestamps = timestamps
             end
           end
-          let(:current_user) do
-            create(:user,
-                   firstname: 'user',
-                   lastname: '1',
-                   member_in_project: project,
-                   member_with_permissions: %i[view_work_packages view_file_links])
-          end
 
-          describe 'attributesByTimestamp' do
+          describe 'attributesByTimestamp', with_ee: %i[baseline_comparison] do
             it 'states whether the work package matches the query filters at the timestamp' do
               expect(subject)
                 .to be_json_eql(true.to_json)

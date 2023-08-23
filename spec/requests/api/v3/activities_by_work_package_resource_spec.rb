@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'rack/test'
 
-describe API::V3::Activities::ActivitiesByWorkPackageAPI do
+RSpec.describe API::V3::Activities::ActivitiesByWorkPackageAPI do
   include API::V3::Utilities::PathHelper
 
   describe 'activities' do
@@ -87,7 +87,7 @@ describe API::V3::Activities::ActivitiesByWorkPackageAPI do
         include_context 'create activity'
       end
 
-      context 'with an errorenous work package' do
+      context 'with an erroneous work package' do
         before do
           work_package.subject = ''
           work_package.save!(validate: false)

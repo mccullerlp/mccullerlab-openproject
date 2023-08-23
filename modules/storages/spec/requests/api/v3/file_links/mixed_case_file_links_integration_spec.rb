@@ -30,7 +30,7 @@ require 'spec_helper'
 require_module_spec_helper
 
 # We want to check the case of file_links from multiple storages
-describe 'API v3 file links resource' do
+RSpec.describe 'API v3 file links resource' do
   include API::V3::Utilities::PathHelper
 
   let(:project) { create(:project) }
@@ -99,7 +99,8 @@ describe 'API v3 file links resource' do
       size: 12706214,
       owner_id: "admin",
       owner_name: "admin",
-      trashed: false
+      trashed: false,
+      path: "/Nextcloud Manual.pdf"
     }
   end
   let(:file_info_trashed) do
@@ -114,7 +115,8 @@ describe 'API v3 file links resource' do
       size: 954123,
       owner_id: "admin",
       owner_name: "admin",
-      trashed: true
+      trashed: true,
+      path: "/Nextcloud Manual.pdf"
     }
   end
 

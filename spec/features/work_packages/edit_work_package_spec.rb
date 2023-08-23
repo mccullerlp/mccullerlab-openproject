@@ -1,8 +1,8 @@
 require 'spec_helper'
 require 'features/page_objects/notification'
 
-describe 'edit work package',
-         js: true do
+RSpec.describe 'edit work package',
+               js: true do
   let(:dev_role) do
     create(:role,
            permissions: %i[view_work_packages
@@ -50,17 +50,12 @@ describe 'edit work package',
   let(:type2) { create(:type, custom_fields: [cf_all, cf_tp2]) }
   let(:project) { create(:project, types: [type, type2]) }
   let(:work_package) do
-    work_package = create(:work_package,
-                          author: dev,
-                          project:,
-                          type:,
-                          created_at: 5.days.ago.to_date.to_fs(:db))
-
-    note_journal = work_package.journals.reload.last
-    note_journal.update_columns(created_at: 5.days.ago.to_date.to_fs(:db),
-                                updated_at: 5.days.ago.to_date.to_fs(:db))
-
-    work_package
+    create(:work_package,
+           :created_in_past,
+           author: dev,
+           project:,
+           created_at: 5.days.ago,
+           type:)
   end
   let(:status) { work_package.status }
 

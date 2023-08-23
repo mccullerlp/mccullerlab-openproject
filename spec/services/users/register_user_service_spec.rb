@@ -27,7 +27,7 @@
 
 require 'spec_helper'
 
-describe Users::RegisterUserService do
+RSpec.describe Users::RegisterUserService do
   let(:user) { build(:user) }
   let(:instance) { described_class.new(user) }
   let(:call) { instance.call }
@@ -64,7 +64,7 @@ describe Users::RegisterUserService do
         user = User.new(status: Principal.statuses[:registered])
         instance = described_class.new(user)
 
-        allow(user).to receive(:auth_source_id).and_return 1234
+        allow(user).to receive(:ldap_auth_source_id).and_return 1234
         expect(user).to receive(:activate)
         expect(user).to receive(:save).and_return true
 

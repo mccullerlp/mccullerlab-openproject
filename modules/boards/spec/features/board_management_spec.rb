@@ -30,7 +30,7 @@ require 'spec_helper'
 require_relative './support/board_index_page'
 require_relative './support/board_page'
 
-describe 'Board management spec', js: true do
+RSpec.describe 'Board management spec', js: true, with_ee: %i[board_view] do
   let(:user) do
     create(:user,
            member_in_project: project,
@@ -47,7 +47,6 @@ describe 'Board management spec', js: true do
   let!(:status) { create(:default_status) }
 
   before do
-    with_enterprise_token :board_view
     project
     login_as(user)
   end
@@ -117,7 +116,7 @@ describe 'Board management spec', js: true do
       board_index.expect_board board_view.name
 
       # Create new board
-      board_page = board_index.create_board action: nil
+      board_page = board_index.create_board
       board_page.rename_board 'Board test'
 
       # Rename through toolbar
@@ -147,7 +146,7 @@ describe 'Board management spec', js: true do
 
       # Expect work package to be saved in query first
       subjects = WorkPackage.where(id: first.ordered_work_packages.pluck(:work_package_id)).pluck(:subject)
-      expect(subjects).to match_array ['Task 1']
+      expect(subjects).to contain_exactly('Task 1')
 
       # Move item to Second list
       board_page.move_card(0, from: 'First', to: 'Second')
@@ -162,7 +161,7 @@ describe 'Board management spec', js: true do
       end
 
       subjects = WorkPackage.where(id: second.ordered_work_packages.pluck(:work_package_id)).pluck(:subject)
-      expect(subjects).to match_array ['Task 1']
+      expect(subjects).to contain_exactly('Task 1')
 
       # Reference an existing work package
       board_page.reference('Second', work_package)
@@ -170,7 +169,7 @@ describe 'Board management spec', js: true do
       board_page.expect_card('Second', work_package.subject)
 
       subjects = WorkPackage.where(id: second.ordered_work_packages.pluck(:work_package_id)).pluck(:subject)
-      expect(subjects).to match_array [work_package.subject, 'Task 1']
+      expect(subjects).to contain_exactly(work_package.subject, 'Task 1')
 
       # Filter for Task
       filters.expect_filter_count 0
@@ -203,6 +202,19 @@ describe 'Board management spec', js: true do
       # Remove entire board
       board_page.delete_board
       board_index.expect_board 'Board foo', present: false
+    end
+
+    it 'allows creating a new project board form via the sidebar' do
+      board_index.visit!
+
+      board_page = board_index.create_board title: 'My Board created via the sidebar',
+                                            via_toolbar: false
+      board_page.board(reload: true) do |board|
+        expect(board.name).to eq 'My Board created via the sidebar'
+        queries = board.contained_queries
+        expect(queries.count).to eq(1)
+        expect(queries.first.name).to eq 'Unnamed list'
+      end
     end
   end
 
@@ -249,19 +261,16 @@ describe 'Board management spec', js: true do
       board_page.expect_card('List 1', 'Task 1', present: false)
       board_page.expect_card('List 2', 'Task 1', present: true)
 
-      # There is no frontend visible semaphore to check for the change being saved
-      sleep(0.1)
-
       # Expect added to query
       queries = board_page.board(reload: true).contained_queries
       first = queries.find_by(name: 'List 1')
       second = queries.find_by(name: 'List 2')
-      expect(first.ordered_work_packages).to be_empty
+      wait_for(first.ordered_work_packages).to be_empty
       expect(second.ordered_work_packages.count).to eq(1)
 
       # Expect work package to be saved in query first
       subjects = WorkPackage.where(id: second.ordered_work_packages.pluck(:work_package_id)).pluck(:subject)
-      expect(subjects).to match_array ['Task 1']
+      expect(subjects).to contain_exactly('Task 1')
 
       board_page.back_to_index
 
@@ -271,9 +280,10 @@ describe 'Board management spec', js: true do
 
   context 'with view permission only' do
     let(:permissions) { %i[show_board_views] }
+    let(:board_view) { create(:board_grid_with_queries, project:) }
 
     it 'does not allow viewing of boards' do
-      board_index.visit!
+      visit project_work_package_board_path(project, board_view)
       expect(page).to have_selector('#errorExplanation', text: I18n.t(:notice_not_authorized))
 
       board_index.expect_editable false

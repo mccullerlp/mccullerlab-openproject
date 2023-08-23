@@ -31,16 +31,16 @@ require_module_spec_helper
 require 'contracts/shared/model_contract_shared_context'
 require_relative 'shared_contract_examples'
 
-describe Storages::Storages::CreateContract do
+RSpec.describe Storages::Storages::CreateContract do
   include_context 'ModelContract shared context'
 
   it_behaves_like 'storage contract' do
     let(:current_user) { create(:admin) }
     let(:storage) do
-      Storages::Storage.new(name: storage_name,
-                            provider_type: storage_provider_type,
-                            host: storage_host,
-                            creator: storage_creator)
+      Storages::NextcloudStorage.new(name: storage_name,
+                                     provider_type: storage_provider_type,
+                                     host: storage_host,
+                                     creator: storage_creator)
     end
     let(:contract) { described_class.new(storage, current_user) }
 

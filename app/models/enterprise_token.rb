@@ -42,8 +42,12 @@ class EnterpriseToken < ApplicationRecord
       true
     end
 
+    def active?
+      current && !current.expired?
+    end
+
     def show_banners?
-      # OpenProject::Configuration.ee_manager_visible? && (!current || current.expired?)
+      # OpenProject::Configuration.ee_manager_visible? && !active?
       false
     end
 
@@ -100,7 +104,7 @@ class EnterpriseToken < ApplicationRecord
   def invalid_domain?
     return false unless token_object&.validate_domain?
 
-    token_object.domain != Setting.host_name
+    !token_object.valid_domain?(Setting.host_name)
   end
 
   private

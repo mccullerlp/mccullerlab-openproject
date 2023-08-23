@@ -30,7 +30,7 @@ require 'spec_helper'
 require_relative './../support//board_index_page'
 require_relative './../support/board_page'
 
-describe 'Custom field filter in boards', js: true do
+RSpec.describe 'Custom field filter in boards', js: true, with_ee: %i[board_view] do
   let(:user) do
     create(:user,
            member_in_project: project,
@@ -84,7 +84,6 @@ describe 'Custom field filter in boards', js: true do
   end
 
   before do
-    with_enterprise_token :board_view
     project
     login_as(user)
   end
@@ -93,7 +92,7 @@ describe 'Custom field filter in boards', js: true do
     board_index.visit!
 
     # Create new board
-    board_page = board_index.create_board action: :Status
+    board_page = board_index.create_board action: 'Status'
 
     # expect lists of default status
     board_page.expect_list 'Open'
@@ -104,7 +103,7 @@ describe 'Custom field filter in boards', js: true do
 
     filters.add_filter_by(custom_field.name,
                           'is (OR)',
-                          ['A', 'B'],
+                          %w[A B],
                           custom_field.attribute_name(:camel_case))
 
     board_page.expect_changed

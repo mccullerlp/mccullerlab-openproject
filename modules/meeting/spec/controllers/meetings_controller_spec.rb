@@ -26,140 +26,199 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-require File.dirname(__FILE__) + '/../spec_helper'
+require "#{File.dirname(__FILE__)}/../spec_helper"
 
-describe MeetingsController do
+RSpec.describe MeetingsController do
+  let(:user) { create(:admin) }
   let(:project) { create(:project) }
+  let(:other_project) { create(:project) }
 
   before do
+    allow(User).to receive(:current).and_return user
+
     allow(Project).to receive(:find).and_return(project)
 
-    allow(@controller).to receive(:authorize)
-    allow(@controller).to receive(:check_if_login_required)
+    allow(controller).to receive(:authorize)
+    allow(controller).to receive(:authorize_global)
+    allow(controller).to receive(:check_if_login_required)
   end
 
   describe 'GET' do
     describe 'index' do
-      before do
-        @ms = [build_stubbed(:meeting),
-               build_stubbed(:meeting),
-               build_stubbed(:meeting)]
-        allow(@ms).to receive(:from_tomorrow).and_return(@ms)
-
-        allow(project).to receive(:meetings).and_return(@ms)
-        %i[with_users_by_date page per_page].each do |meth|
-          expect(@ms).to receive(meth).and_return(@ms)
-        end
-        @grouped = double('grouped')
-        expect(Meeting).to receive(:group_by_time).with(@ms).and_return(@grouped)
+      let(:meetings) do
+        [
+          create(:meeting, project:),
+          create(:meeting, project:),
+          create(:meeting, project: other_project)
+        ]
       end
 
       describe 'html' do
-        before do
-          get 'index', params: { project_id: project.id }
+        context 'when requesting meetings globally' do
+          before do
+            get 'index'
+          end
+
+          it { expect(response).to be_successful }
+          it { expect(assigns(:meetings)).to match_array meetings }
         end
 
-        it { expect(response).to be_successful }
-        it { expect(assigns(:meetings_by_start_year_month_date)).to eql @grouped }
+        context 'when requesting meetings scoped to a project ID' do
+          before do
+            get 'index', params: { project_id: project.id }
+          end
+
+          it { expect(response).to be_successful }
+          it { expect(assigns(:meetings)).to match_array meetings[0..1] }
+        end
       end
     end
 
     describe 'show' do
-      before do
-        @m = build_stubbed(:meeting, project:, agenda: nil)
-        allow(Meeting).to receive_message_chain(:includes, :find).and_return(@m)
-      end
+      let(:meeting) { create(:meeting, project:, agenda: nil) }
 
       describe 'html' do
         before do
-          get 'show', params: { id: @m.id }
+          get 'show', params: { id: meeting.id }
         end
 
         it { expect(response).to be_successful }
+        it { expect(assigns(:meeting)).to eql meeting }
       end
     end
 
     describe 'new' do
+      let(:meeting) { Meeting.new(project:) }
+
       before do
         allow(Project).to receive(:find).and_return(project)
-        @m = build_stubbed(:meeting)
-        allow(Meeting).to receive(:new).and_return(@m)
+        allow(Meeting).to receive(:new).and_return(meeting)
       end
 
-      describe 'html' do
-        before do
-          get 'new',  params: { project_id: project.id }
+      shared_examples_for 'new action' do |response_type:|
+        describe response_type do
+          context 'when requesting the page without a project id' do
+            before do
+              get 'new'
+            end
+
+            it { expect(response).to be_successful }
+            it { expect(assigns(:meeting)).to eql meeting }
+            it { expect(assigns(:project)).to be_nil }
+          end
+
+          context 'when requesting the page with a project id' do
+            before do
+              get 'new', params: { project_id: project.id }
+            end
+
+            it { expect(response).to be_successful }
+            it { expect(assigns(:meeting)).to eql meeting }
+            it { expect(assigns(:project)).to eql project }
+          end
         end
-
-        it { expect(response).to be_successful }
-        it { expect(assigns(:meeting)).to eql @m }
       end
+
+      it_behaves_like 'new action', response_type: 'html'
+      it_behaves_like 'new action', response_type: 'turbo_stream'
     end
 
     describe 'edit' do
-      before do
-        @m = build_stubbed(:meeting, project:)
-        allow(Meeting).to receive_message_chain(:includes, :find).and_return(@m)
-      end
+      let(:meeting) { create(:meeting, project:) }
 
       describe 'html' do
         before do
-          get 'edit', params: { id: @m.id }
+          get 'edit', params: { id: meeting.id }
         end
 
         it { expect(response).to be_successful }
-        it { expect(assigns(:meeting)).to eql @m }
+        it { expect(assigns(:meeting)).to eql meeting }
       end
     end
+  end
 
+  describe 'POST' do
     describe 'create' do
       render_views
 
+      let(:base_params) do
+        {
+          project_id: project&.id,
+          meeting: meeting_params
+        }
+      end
+
+      let(:base_meeting_params) do
+        {
+          title: 'Foobar',
+          duration: '1.0',
+          start_date: '2015-06-01',
+          start_time_hour: '10:00'
+        }
+      end
+
+      let(:params) { base_params }
+      let(:meeting_params) { base_meeting_params }
+
       before do
         allow(Project).to receive(:find).and_return(project)
+
         post :create,
-             params: {
-               project_id: project.id,
-               meeting: {
-                 title: 'Foobar',
-                 duration: '1.0'
-               }.merge(params)
-             }
+             params:
       end
 
-      describe 'invalid start_date' do
-        let(:params) do
-          {
-            start_date: '-',
-            start_time_hour: '10:00'
-          }
+      context 'with a project_id' do
+        context 'and an invalid start_date with start_time_hour' do
+          let(:meeting_params) do
+            base_meeting_params.merge(start_date: '-')
+          end
+
+          it 'renders an error' do
+            expect(response).to have_http_status :ok
+            expect(response).to render_template :new
+            expect(response.body)
+              .to have_selector '#errorExplanation li',
+                                text: "Start date #{I18n.t('activerecord.errors.messages.not_an_iso_date')}"
+          end
         end
 
+        context 'and an invalid start_time_hour with start_date' do
+          let(:meeting_params) do
+            base_meeting_params.merge(start_time_hour: '-')
+          end
+
+          it 'renders an error' do
+            expect(response).to have_http_status :ok
+            expect(response).to render_template :new
+            expect(response.body)
+              .to have_selector '#errorExplanation li',
+                                text: "Starting time #{I18n.t('activerecord.errors.messages.invalid_time_format')}"
+          end
+        end
+      end
+
+      context 'with a nil project_id' do
+        let(:project) { nil }
+
         it 'renders an error' do
-          expect(response.status).to be 200
+          expect(response).to have_http_status :ok
           expect(response).to render_template :new
           expect(response.body)
             .to have_selector '#errorExplanation li',
-                              text: "Start date " +
-                                    I18n.t('activerecord.errors.messages.not_an_iso_date')
+                              text: "Project #{I18n.t('activerecord.errors.messages.blank')}"
         end
       end
 
-      describe 'invalid start_time_hour' do
-        let(:params) do
-          {
-            start_date: '2015-06-01',
-            start_time_hour: '-'
-          }
-        end
+      context 'without a project_id' do
+        let(:params) { base_params.except(:project_id) }
+        let(:project) { nil }
 
         it 'renders an error' do
-          expect(response.status).to be 200
+          expect(response).to have_http_status :ok
           expect(response).to render_template :new
           expect(response.body)
             .to have_selector '#errorExplanation li',
-                              text: "Starting time " +
-                                    I18n.t('activerecord.errors.messages.invalid_time_format')
+                              text: "Project #{I18n.t('activerecord.errors.messages.blank')}"
         end
       end
     end

@@ -26,7 +26,7 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-shared_examples_for 'acts_as_watchable included' do
+RSpec.shared_examples_for 'acts_as_watchable included' do
   before do
     unless defined?(model_instance) &&
            defined?(watch_permission) &&
@@ -116,7 +116,7 @@ MESSAGE
       # in case the model_instance creates users, we do not want them
       # to mess with our expected users
       model_instance
-      User.destroy_all
+      User.not_builtin.update_all(status: User.statuses[:locked])
 
       Role.non_member
       Role.anonymous
@@ -200,7 +200,7 @@ MESSAGE
       # in case the model_instance creates users, we do not want them
       # to mess with our expected users
       model_instance
-      User.destroy_all
+      User.not_builtin.update_all(status: User.statuses[:locked])
 
       User.system.save!
 

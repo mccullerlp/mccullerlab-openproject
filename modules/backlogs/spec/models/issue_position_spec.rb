@@ -26,9 +26,9 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe WorkPackage do
+RSpec.describe WorkPackage do
   describe 'Story positions' do
     def build_work_package(options)
       build(:work_package, options.reverse_merge(version_id: sprint_1.id,

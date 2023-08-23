@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe API::V3::Queries::QueryRepresenter do
+RSpec.describe API::V3::Queries::QueryRepresenter do
   include API::V3::Utilities::PathHelper
 
   let(:query) { build_stubbed(:query, project:, views:) }
@@ -547,6 +547,35 @@ describe API::V3::Queries::QueryRepresenter do
     end
   end
 
+  describe 'ical url' do
+    context 'when allowed to subscribe to ical' do
+      let(:permissions) { %i(share_via_ical) }
+
+      context 'when icalendar sharing is enabled globally', with_settings: { ical_enabled: true } do
+        it_behaves_like 'has an untitled link' do
+          let(:link) { 'icalUrl' }
+          let(:href) { api_v3_paths.query_ical_url(query.id) }
+        end
+      end
+
+      context 'when icalendar sharing is disabled globally', with_settings: { ical_enabled: false } do
+        it 'has no icalUrl link' do
+          expect(subject)
+            .not_to have_json_path('_links/icalUrl')
+        end
+      end
+    end
+
+    context 'when lacking permission' do
+      let(:permissions) { [] }
+
+      it 'has no icalUrl link' do
+        expect(subject)
+          .not_to have_json_path('_links/icalUrl')
+      end
+    end
+  end
+
   describe 'properties' do
     it_behaves_like 'property', :_type do
       let(:value) { 'Query' }
@@ -576,6 +605,10 @@ describe API::V3::Queries::QueryRepresenter do
       let(:value) { query.timeline_labels }
     end
 
+    it_behaves_like 'property', :timestamps do
+      let(:value) { query.timestamps }
+    end
+
     it_behaves_like 'property', :public do
       let(:value) { query.public }
     end
@@ -596,16 +629,14 @@ describe API::V3::Queries::QueryRepresenter do
       end
     end
 
-    describe 'timestamps' do
-      it_behaves_like 'has UTC ISO 8601 date and time' do
-        let(:date) { query.created_at }
-        let(:json_path) { 'createdAt' }
-      end
+    it_behaves_like 'has UTC ISO 8601 date and time' do
+      let(:date) { query.created_at }
+      let(:json_path) { 'createdAt' }
+    end
 
-      it_behaves_like 'has UTC ISO 8601 date and time' do
-        let(:date) { query.updated_at }
-        let(:json_path) { 'updatedAt' }
-      end
+    it_behaves_like 'has UTC ISO 8601 date and time' do
+      let(:date) { query.updated_at }
+      let(:json_path) { 'updatedAt' }
     end
 
     describe 'highlighting' do

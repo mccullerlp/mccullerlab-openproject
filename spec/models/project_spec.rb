@@ -29,7 +29,7 @@
 require 'spec_helper'
 require File.expand_path('../support/shared/become_member', __dir__)
 
-describe Project do
+RSpec.describe Project do
   include BecomeMember
   shared_let(:admin) { create(:admin) }
 
@@ -151,28 +151,6 @@ describe Project do
       it 'is false' do
         expect(project).not_to be_copy_allowed
       end
-    end
-  end
-
-  describe 'status' do
-    let(:status) { build_stubbed(:project_status) }
-    let(:stubbed_project) do
-      build_stubbed(:project,
-                    status:)
-    end
-
-    it 'has a status' do
-      expect(stubbed_project.status)
-        .to eql status
-    end
-
-    it 'is destroyed along with the project' do
-      status = project.create_status explanation: 'some description'
-
-      project.destroy!
-
-      expect(Projects::Status.where(id: status.id))
-        .not_to exist
     end
   end
 

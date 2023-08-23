@@ -26,9 +26,9 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-require File.dirname(__FILE__) + '/../../spec_helper'
+require 'spec_helper'
 
-describe 'rb_taskboards/show' do
+RSpec.describe 'rb_taskboards/show' do
   let(:user1) { create(:user) }
   let(:user2) { create(:user) }
   let(:role_allowed) do

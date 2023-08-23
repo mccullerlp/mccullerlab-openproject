@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'mobile date filter work packages', js: true do
+RSpec.describe 'mobile date filter work packages', :js, :with_cuprite do
   shared_let(:user) { create(:admin) }
   shared_let(:project) { create(:project) }
   shared_let(:wp_table) { Pages::WorkPackagesTable.new(project) }
@@ -54,13 +54,18 @@ describe 'mobile date filter work packages', js: true do
       start_field = find('[data-qa-selector="op-basic-range-date-picker-start"]')
       end_field = find('[data-qa-selector="op-basic-range-date-picker-end"]')
 
-      start_field.native.clear
-      end_field.native.clear
+      clear_input_field_contents(start_field)
+      clear_input_field_contents(end_field)
 
-      start_field.set 1.day.ago.strftime('%m/%d/%Y')
-      end_field.set Date.current.strftime('%m/%d/%Y')
+      start_field.set 1.day.ago.to_date
+      start_field.send_keys :tab
+      end_field.set Date.current
+      end_field.send_keys :tab
 
+      wait_for_reload
       loading_indicator_saveguard
+
+      wp_cards.expect_work_package_count 1
       wp_cards.expect_work_package_listed work_package_with_due_date
       wp_cards.expect_work_package_not_listed work_package_without_due_date
 
@@ -82,10 +87,13 @@ describe 'mobile date filter work packages', js: true do
       date_field = find_field 'values-dueDate'
       expect(date_field['type']).to eq 'date'
 
-      date_field.native.clear
-      date_field.set Date.current.strftime('%m/%d/%Y')
+      clear_input_field_contents(date_field)
+      date_field.set Date.current
 
+      wait_for_reload
       loading_indicator_saveguard
+
+      wp_cards.expect_work_package_count 1
       wp_cards.expect_work_package_listed work_package_with_due_date
       wp_cards.expect_work_package_not_listed work_package_without_due_date
 

@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg &nbsp; behavior',
-         js: true do
+RSpec.describe 'Wysiwyg &nbsp; behavior',
+               js: true do
   shared_let(:admin) { create(:admin) }
   let(:user) { admin }
 
@@ -52,7 +52,7 @@ describe 'Wysiwyg &nbsp; behavior',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector('p') { |node|

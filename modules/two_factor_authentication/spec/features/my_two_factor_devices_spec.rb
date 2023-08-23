@@ -1,9 +1,9 @@
 require_relative '../spec_helper'
 
-describe 'My Account 2FA configuration',
-         js: true, with_settings: {
-           plugin_openproject_two_factor_authentication: { 'active_strategies' => %i[developer totp] }
-         } do
+RSpec.describe 'My Account 2FA configuration',
+               js: true, with_settings: {
+                 plugin_openproject_two_factor_authentication: { 'active_strategies' => %i[developer totp] }
+               } do
   let(:dialog) { Components::PasswordConfirmationDialog.new }
   let(:user_password) { 'boB!4' * 4 }
   let(:user) do
@@ -56,7 +56,7 @@ describe 'My Account 2FA configuration',
 
     expect(page).to have_selector('h2', text: I18n.t('two_factor_authentication.devices.confirm_device'))
     expect(page).to have_selector('input#otp')
-    expect(page).to have_selector('.flash.error',
+    expect(page).to have_selector('.op-toast.-error',
                                   text: I18n.t('two_factor_authentication.devices.registration_failed_token_invalid'))
 
     # Fill in correct token

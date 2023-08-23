@@ -26,9 +26,9 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe Task do
+RSpec.describe Task do
   let(:task_type) { create(:type) }
   let(:default_status) { create(:default_status) }
   let(:project) { create(:project) }

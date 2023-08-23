@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'delete placeholder user', js: true do
+RSpec.describe 'delete placeholder user', js: true do
   shared_let(:placeholder_user) { create(:placeholder_user, name: 'UX Developer') }
 
   shared_examples 'placeholders delete flow' do
@@ -49,7 +49,7 @@ describe 'delete placeholder user', js: true do
       expect(page).to have_selector('.danger-zone--verification button:not([disabled])')
       click_on 'Delete'
 
-      expect(page).to have_selector('.flash.info', text: I18n.t(:notice_deletion_scheduled))
+      expect(page).to have_selector('.op-toast.-info', text: I18n.t(:notice_deletion_scheduled))
 
       # The user is still there
       placeholder_user.reload

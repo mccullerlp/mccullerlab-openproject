@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe AccountController,
-         skip_2fa_stage: true do
+RSpec.describe AccountController,
+               skip_2fa_stage: true do
   class UserHook < OpenProject::Hook::ViewListener
     attr_reader :registered_user, :first_login_user
 
@@ -94,6 +94,32 @@ describe AccountController,
 
       it 'redirects to home' do
         expect(response).to redirect_to my_page_path
+      end
+    end
+  end
+
+  describe 'GET #internal_login' do
+    shared_let(:admin) { create(:admin) }
+
+    context 'when direct login enabled', with_config: { omniauth_direct_login_provider: 'some_provider' } do
+      it 'allows to login internally using a special route' do
+        get :internal_login
+
+        expect(response).to render_template 'account/login'
+      end
+
+      it 'allows to post to login' do
+        post :login, params: { username: admin.login, password: 'adminADMIN!' }
+        expect(response).to redirect_to '/my/page'
+      end
+    end
+
+    context 'when direct login disabled' do
+      it 'the internal login route is inactive' do
+        get :internal_login
+
+        expect(response).to have_http_status(:not_found)
+        expect(session[:internal_login]).not_to be_present
       end
     end
   end
@@ -193,17 +219,19 @@ describe AccountController,
         let(:auth_source) { create(:ldap_auth_source) }
 
         it 'creates the user on the fly' do
-          allow(AuthSource).to receive(:authenticate).and_return(login: 'foo',
-                                                                 firstname: 'Foo',
-                                                                 lastname: 'Smith',
-                                                                 mail: 'foo@bar.com',
-                                                                 auth_source_id: auth_source.id)
+          allow(LdapAuthSource)
+            .to(receive(:authenticate))
+            .and_return(login: 'foo',
+                        firstname: 'Foo',
+                        lastname: 'Smith',
+                        mail: 'foo@bar.com',
+                        ldap_auth_source_id: auth_source.id)
           post :login, params: { username: 'foo', password: 'bar' }
 
           expect(response).to redirect_to home_url(first_time_user: true)
           user = User.find_by(login: 'foo')
           expect(user).to be_an_instance_of User
-          expect(user.auth_source_id).to eq(auth_source.id)
+          expect(user.ldap_auth_source_id).to eq(auth_source.id)
           expect(user.current_password).to be_nil
         end
       end
@@ -295,7 +323,7 @@ describe AccountController,
         let(:user) { build_stubbed(:user, login: 'bob', identity_url: 'saml:foo') }
         let(:slo_callback) { nil }
         let(:sso_provider) do
-          { name: 'saml',  single_sign_out_callback: slo_callback }
+          { name: 'saml', single_sign_out_callback: slo_callback }
         end
 
         before do
@@ -412,14 +440,14 @@ describe AccountController,
           firstname: 'Scarlet',
           lastname: 'Scallywag',
           mail: 's.scallywag@openproject.com',
-          auth_source_id: auth_source.id
+          ldap_auth_source_id: auth_source.id
         }
       end
 
       let(:authenticate) { true }
 
       before do
-        allow(AuthSource).to receive(:authenticate).and_return(authenticate ? user_attributes : nil)
+        allow(LdapAuthSource).to receive(:authenticate).and_return(authenticate ? user_attributes : nil)
 
         # required so that the register view can be rendered
         allow_any_instance_of(User).to receive(:change_password_allowed?).and_return(false)
@@ -456,10 +484,11 @@ describe AccountController,
     end
 
     describe 'POST' do
-      it 'redirects to some_provider' do
-        post :login, params: { username: 'foo', password: 'bar' }
+      shared_let(:admin) { create(:admin) }
 
-        expect(response).to redirect_to '/auth/some_provider'
+      it 'allows to login internally still' do
+        post :login, params: { username: admin.login, password: 'adminADMIN!' }
+        expect(response).to redirect_to "/my/page"
       end
     end
   end
@@ -795,9 +824,7 @@ describe AccountController,
         end
 
         it 'preserves the back url' do
-          expect(response).to redirect_to(
-            '/login?back_url=https%3A%2F%2Fexample.net%2Fsome_back_url'
-          )
+          expect(response).to redirect_to('/login?back_url=https%3A%2F%2Fexample.net%2Fsome_back_url')
         end
 
         it 'calls the user_registered callback' do
@@ -842,9 +869,9 @@ describe AccountController,
             with_settings: { self_registration: Setting::SelfRegistration.disabled } do
       before do
         allow_any_instance_of(User).to receive(:change_password_allowed?).and_return(false)
-        allow(AuthSource).to receive(:authenticate).and_return(login: 'foo',
-                                                               lastname: 'Smith',
-                                                               auth_source_id: 66)
+        allow(LdapAuthSource).to receive(:authenticate).and_return(login: 'foo',
+                                                                   lastname: 'Smith',
+                                                                   ldap_auth_source_id: 66)
       end
 
       context 'with password login enabled' do
@@ -869,7 +896,7 @@ describe AccountController,
           user = User.find_by_login('foo')
 
           expect(user).to be_an_instance_of(User)
-          expect(user.auth_source_id).to be 66
+          expect(user.ldap_auth_source_id).to be 66
           expect(user.current_password).to be_nil
         end
       end
@@ -963,8 +990,8 @@ describe AccountController,
       }
     end
 
-    let(:auth_source) { create(:ldap_auth_source) }
-    let(:user) { create(:user, status: 2, auth_source:) }
+    let(:ldap_auth_source) { create(:ldap_auth_source) }
+    let(:user) { create(:user, status: 2, ldap_auth_source:) }
     let(:login) { user.login }
 
     before do
@@ -992,7 +1019,7 @@ describe AccountController,
       end
 
       before do
-        allow(AuthSource).to receive(:find_user).and_return attrs
+        allow(LdapAuthSource).to receive(:find_user).and_return attrs
       end
 
       it "shows the account creation form with an error" do
@@ -1013,7 +1040,7 @@ describe AccountController,
       end
 
       before do
-        allow(AuthSource).to receive(:find_user).and_return attrs
+        allow(LdapAuthSource).to receive(:find_user).and_return attrs
       end
 
       it "shows the account creation form with an error" do

@@ -26,7 +26,7 @@
 
 require 'spec_helper'
 
-describe WorkPackages::UpdateAncestors::Loader, type: :model do
+RSpec.describe WorkPackages::UpdateAncestors::Loader, type: :model do
   shared_let(:grandgrandparent) do
     create(:work_package)
   end
@@ -209,6 +209,7 @@ describe WorkPackages::UpdateAncestors::Loader, type: :model do
         "id" => hashed_work_package.id,
         "ignore_non_working_days" => false,
         "parent_id" => hashed_work_package.parent_id,
+        "remaining_hours" => nil,
         "schedule_manually" => false }
     end
 
@@ -257,6 +258,7 @@ describe WorkPackages::UpdateAncestors::Loader, type: :model do
         "id" => hashed_work_package.id,
         "ignore_non_working_days" => false,
         "parent_id" => hashed_work_package.parent_id,
+        "remaining_hours" => nil,
         "schedule_manually" => false }
     end
 

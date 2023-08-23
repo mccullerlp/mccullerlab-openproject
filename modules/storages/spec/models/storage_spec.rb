@@ -28,13 +28,46 @@
 
 require_relative '../spec_helper'
 
-describe Storages::Storage do
+RSpec.describe Storages::Storage do
   let(:creator) { create(:user) }
   let(:default_attributes) do
     { name: "NC 1",
       provider_type: Storages::Storage::PROVIDER_TYPE_NEXTCLOUD,
       host: 'https://example.com',
       creator: }
+  end
+
+  describe '.shorten_provider_type' do
+    context 'when provider_type matches the signature' do
+      it 'responds with shortened provider type' do
+        expect(
+          described_class.shorten_provider_type(described_class::PROVIDER_TYPE_NEXTCLOUD)
+        ).to eq('nextcloud')
+      end
+    end
+
+    context 'when provider_type does not match the signature' do
+      it 'raises an error', aggregate_failures: true do
+        expect do
+          described_class.shorten_provider_type('Storages::Nextcloud')
+        end.to raise_error(
+          'Unknown provider_type! Given: Storages::Nextcloud. ' \
+          'Expected the following signature: Storages::{Name of the provider}Storage'
+        )
+        expect do
+          described_class.shorten_provider_type('Storages:NextcloudStorage')
+        end.to raise_error(
+          'Unknown provider_type! Given: Storages:NextcloudStorage. ' \
+          'Expected the following signature: Storages::{Name of the provider}Storage'
+        )
+        expect do
+          described_class.shorten_provider_type('Storages::NextcloudStorag')
+        end.to raise_error(
+          'Unknown provider_type! Given: Storages::NextcloudStorag. ' \
+          'Expected the following signature: Storages::{Name of the provider}Storage'
+        )
+      end
+    end
   end
 
   describe '#create' do
@@ -77,6 +110,20 @@ describe Storages::Storage do
     it "destroys all associated ProjectStorage and FileLink records" do
       expect(Storages::ProjectStorage.count).to be 0
       expect(Storages::FileLink.count).to be 0
+    end
+  end
+
+  describe '#provider_type_nextcloud?' do
+    context 'when provider_type is nextcloud' do
+      let(:storage) { build(:storage) }
+
+      it { expect(storage).to be_a_provider_type_nextcloud }
+    end
+
+    context 'when provider_type is not nextcloud' do
+      let(:storage) { build(:storage, provider_type: 'Storages::DropboxStorage') }
+
+      it { expect(storage).not_to be_a_provider_type_nextcloud }
     end
   end
 end

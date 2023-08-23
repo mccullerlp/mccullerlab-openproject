@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'rack/test'
 
-describe 'API v3 capabilities resource', content_type: :json do
+RSpec.describe 'API v3 capabilities resource', content_type: :json do
   include Rack::Test::Methods
   include API::V3::Utilities::PathHelper
 
@@ -46,7 +46,7 @@ describe 'API v3 capabilities resource', content_type: :json do
     create(:role, permissions: %i[manage_members])
   end
   let(:global_role) do
-    create(:global_role, permissions: %i[manage_user])
+    create(:global_role, permissions: %i[create_user manage_user])
   end
   let(:other_user) { create(:user) }
   let(:other_user_global_member) do

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe LdapGroups::SynchronizedGroup do
+RSpec.describe LdapGroups::SynchronizedGroup do
   describe 'validations' do
     subject { build(:ldap_synchronized_group) }
 
@@ -16,7 +16,7 @@ describe LdapGroups::SynchronizedGroup do
       it 'validates missing attributes' do
         expect(subject.save).to be false
         expect(subject.errors[:dn]).to include "can't be blank."
-        expect(subject.errors[:auth_source]).to include "can't be blank."
+        expect(subject.errors[:ldap_auth_source]).to include "can't be blank."
         expect(subject.errors[:group]).to include "can't be blank."
       end
     end

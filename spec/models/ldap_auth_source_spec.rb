@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe LdapAuthSource do
+RSpec.describe LdapAuthSource do
   it 'creates' do
     a = described_class.new(name: 'My LDAP', host: 'ldap.example.net', port: 389, base_dn: 'dc=example,dc=net',
                             attr_login: 'sAMAccountName')
@@ -216,7 +216,7 @@ describe LdapAuthSource do
     end
   end
 
-  describe 'with live LDAP' do
+  describe 'with live LDAP', skip_if_command_unavailable: 'java' do
     before(:all) do
       ldif = Rails.root.join('spec/fixtures/ldap/users.ldif')
       @ldap_server = Ladle::Server.new(quiet: false, port: ParallelHelper.port_for_ldap.to_s, domain: 'dc=example,dc=com',
@@ -224,7 +224,7 @@ describe LdapAuthSource do
     end
 
     after(:all) do
-      @ldap_server.stop
+      @ldap_server&.stop # rubocop:disable RSpec/InstanceVariable
     end
 
     # Ldap has three users aa729, bb459, cc414
@@ -275,7 +275,7 @@ describe LdapAuthSource do
           expect(attributes[:firstname]).to eq 'Belle'
           expect(attributes[:lastname]).to eq 'Baldwin'
           expect(attributes[:mail]).to eq 'belle@example.org'
-          expect(attributes[:auth_source_id]).to eq ldap.id
+          expect(attributes[:ldap_auth_source_id]).to eq ldap.id
 
           expect { User.new(attributes) }.not_to raise_error
         end

@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'authorization for BCF api',
-         js: true, with_config: { edition: 'bim' } do
+RSpec.describe 'authorization for BCF api',
+               js: true, with_config: { edition: 'bim' } do
   let!(:user) { create(:admin) }
   let(:client_secret) { app.plaintext_secret }
   let(:scope) { 'bcf_v2_1' }
@@ -62,7 +62,7 @@ describe 'authorization for BCF api',
     fill_in 'application_redirect_uri', with: "urn:ietf:wg:oauth:2.0:oob\nhttps://localhost/my/callback"
     click_on 'Create'
 
-    expect(page).to have_selector('.flash.notice', text: 'Successful creation.')
+    expect(page).to have_selector('.op-toast.-success', text: 'Successful creation.')
 
     expect(page).to have_selector('.attributes-key-value--key',
                                   text: 'Client ID')

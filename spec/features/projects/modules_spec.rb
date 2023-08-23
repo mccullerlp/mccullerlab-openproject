@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Projects module administration' do
+RSpec.describe 'Projects module administration' do
   let!(:project) do
     create(:project,
            enabled_module_names: [])
@@ -81,10 +81,10 @@ describe 'Projects module administration' do
     expect(page)
       .to have_selector '.op-toast.-error',
                         text: I18n.t(:'activerecord.errors.models.project.attributes.enabled_modules.dependency_missing',
-                                     dependency: 'Work package tracking',
-                                     module: 'Calendar')
+                                     dependency: 'Work packages',
+                                     module: 'Calendars')
 
-    check 'Work package tracking'
+    check 'Work packages'
 
     click_button 'Save'
 
@@ -94,10 +94,10 @@ describe 'Projects module administration' do
       .to have_checked_field 'Activity'
 
     expect(page)
-      .to have_checked_field 'Calendar'
+      .to have_checked_field 'Calendars'
 
     expect(page)
-      .to have_checked_field 'Work package tracking'
+      .to have_checked_field 'Work packages'
   end
 
   context 'with a user who does not have the correct permissions (#38097)' do

@@ -46,7 +46,12 @@ module Pages
     end
 
     def reload!
-      page.driver.browser.navigate.refresh
+      if using_cuprite?
+        page.driver.browser.refresh
+        wait_for_reload
+      else
+        page.driver.browser.navigate.refresh
+      end
     end
 
     def accept_alert_dialog!
@@ -92,7 +97,7 @@ module Pages
       elsif type == :error
         expect(page).to have_selector(".errorExplanation", text: message)
       elsif type == :success
-        expect(page).to have_selector(".flash.notice", text: message)
+        expect(page).to have_selector(".op-toast.-success", text: message)
       else
         raise NotImplementedError
       end
@@ -105,11 +110,7 @@ module Pages
     end
 
     def dismiss_toaster!
-      if toast_type == :angular
-        page.find('.op-toast--close').click
-      else
-        page.find('.flash .icon-close').click
-      end
+      page.find('.op-toast--close').click
     end
 
     def expect_no_toaster(type: :success, message: nil)
@@ -117,6 +118,12 @@ module Pages
         expect(page).not_to have_selector(".op-toast")
       else
         expect(page).not_to have_selector(".op-toast.-#{type}", text: message)
+      end
+    end
+
+    def click_to_sort_by(header_name)
+      within '.generic-table thead' do
+        click_link header_name
       end
     end
 
@@ -175,6 +182,14 @@ module Pages
 
     def toast_type
       :angular
+    end
+
+    def navigate_to_modules_menu_item(link_title)
+      visit root_path
+
+      within '#more-menu', visible: false do
+        click_on link_title, visible: false
+      end
     end
   end
 end

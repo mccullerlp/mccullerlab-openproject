@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg attribute macros', js: true do
+RSpec.describe 'Wysiwyg attribute macros', js: true do
   shared_let(:admin) { create(:admin) }
   let(:user) { admin }
   let!(:project) { create(:project, identifier: 'some-project', enabled_module_names: %w[wiki work_package_tracking]) }
@@ -81,7 +81,7 @@ describe 'Wysiwyg attribute macros', js: true do
 
       click_on 'Save'
 
-      expect(page).to have_selector('.flash.notice')
+      expect(page).to have_selector('.op-toast.-success')
 
       # Expect output widget
       within('#content') do
@@ -134,7 +134,7 @@ describe 'Wysiwyg attribute macros', js: true do
 
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector('.custom-option', count: 6)

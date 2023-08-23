@@ -26,7 +26,7 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-shared_context 'with a project with an arrangement of custom fields' do
+RSpec.shared_context 'with a project with an arrangement of custom fields' do
   shared_let(:version_cf) { create(:version_project_custom_field, position: 1) }
   shared_let(:bool_cf) { create(:bool_project_custom_field, position: 2) }
   shared_let(:user_cf) { create(:user_project_custom_field, position: 3) }
@@ -49,7 +49,10 @@ shared_context 'with a project with an arrangement of custom fields' do
   end
 
   shared_let(:project) do
-    create(:project, members: { other_user => role }).tap do |p|
+    create(:project,
+           status_code: 'off_track',
+           status_explanation: 'some explanation',
+           members: { other_user => role }).tap do |p|
       p.description = "The description of the project"
       p.send(int_cf.attribute_setter, 5)
       p.send(bool_cf.attribute_setter, true)
@@ -60,14 +63,12 @@ shared_context 'with a project with an arrangement of custom fields' do
       p.send(date_cf.attribute_setter, Time.zone.today)
       p.send(user_cf.attribute_setter, other_user)
 
-      p.build_status(code: :off_track)
-
       p.save!(validate: false)
     end
   end
 end
 
-shared_context 'with an instance of the described exporter' do
+RSpec.shared_context 'with an instance of the described exporter' do
   before do
     login_as current_user
   end

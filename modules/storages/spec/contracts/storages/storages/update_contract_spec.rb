@@ -31,12 +31,12 @@ require_module_spec_helper
 require 'contracts/shared/model_contract_shared_context'
 require_relative 'shared_contract_examples'
 
-describe Storages::Storages::UpdateContract do
+RSpec.describe Storages::Storages::UpdateContract do
   include_context 'ModelContract shared context'
 
   it_behaves_like 'storage contract' do
     let(:storage) do
-      build_stubbed(:storage,
+      build_stubbed(:nextcloud_storage,
                     creator: storage_creator,
                     host: storage_host,
                     name: storage_name,

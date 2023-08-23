@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Backlogs', js: true do
+RSpec.describe 'Backlogs', js: true do
   let(:story_type) do
     create(:type_feature)
   end
@@ -104,7 +104,7 @@ describe 'Backlogs', js: true do
     visit backlogs_project_backlogs_path(project)
 
     within("#backlog_#{backlog_version.id}", wait: 10) do
-      menu = find('.menu')
+      menu = find('.backlog-menu')
       menu.click
       click_link 'New Story'
       fill_in 'subject', with: "The new story"

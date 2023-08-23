@@ -111,7 +111,7 @@ The OpenProject documentation should be as clear and easy to understand as possi
 
 - Write in US English with US grammar.  
 
-  
+We aim to use fair language on our language and documentation and choose gender-neutral terms whenever possible. If this is not possible due to the language, e.g. German, we use : to be as inclusive as possible. Please refer to the [fair language guide](../../translate-openproject/fair-language/) for more specific instructions. 
 
 ## Capitalization
 
@@ -382,7 +382,7 @@ Use these terms when referring to OpenProject’s main application elements:
 
 All project menu items are spelled as in the application in bold, e.g.
 
-- In the project menu, select **Work packages** to open your work package list.
+- In the project menu, select **Work packages** to open your work package table.
 
   
 

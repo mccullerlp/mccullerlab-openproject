@@ -28,7 +28,7 @@
 
 require File.dirname(__FILE__) + '/../spec_helper'
 
-describe Meeting do
+RSpec.describe Meeting do
   shared_let (:user1) { create(:user) }
   shared_let (:user2) { create(:user) }
   let(:project) { create(:project, members: project_members) }
@@ -46,7 +46,7 @@ describe Meeting do
   it { is_expected.to validate_presence_of :title }
 
   describe 'new instance' do
-    let(:meeting) { build(:meeting, title: 'dingens') }
+    let(:meeting) { build(:meeting, project:, title: 'dingens') }
 
     describe 'to_s' do
       it { expect(meeting.to_s).to eq('dingens') }

@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Omniauth authentication' do
+RSpec.describe 'Omniauth authentication' do
   # Load ViewAccountLoginAuthProvider to have this spec passing
   OpenProject::Hooks::ViewAccountLoginAuthProvider
 
@@ -175,8 +175,7 @@ describe 'Omniauth authentication' do
   context 'register on the fly',
           with_settings: {
             self_registration?: true,
-            self_registration: Setting::SelfRegistration.automatic,
-            available_languages: [:en]
+            self_registration: Setting::SelfRegistration.automatic
           } do
     let(:user) do
       User.new(force_password_change: false,

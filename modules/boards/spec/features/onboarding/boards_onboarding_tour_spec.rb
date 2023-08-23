@@ -29,7 +29,8 @@
 require 'spec_helper'
 require_relative './../support/onboarding_steps'
 
-describe 'boards onboarding tour', js: true do
+RSpec.describe 'boards onboarding tour',
+               js: true do
   let(:next_button) { find('.enjoyhint_next_btn') }
   let(:user) do
     create(:admin,
@@ -83,9 +84,8 @@ describe 'boards onboarding tour', js: true do
   end
 
   context 'as a new user' do
-    context 'with an EE token' do
+    context 'with an EE token', with_ee: %i[board_view] do
       before do
-        with_enterprise_token :board_view
         login_as user
       end
 

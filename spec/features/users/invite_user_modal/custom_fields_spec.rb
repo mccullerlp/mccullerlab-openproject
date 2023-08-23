@@ -28,11 +28,11 @@
 
 require 'spec_helper'
 
-describe 'Invite user modal custom fields', js: true do
+RSpec.describe 'Invite user modal custom fields', js: true, with_cuprite: true do
   shared_let(:project) { create(:project) }
 
   let(:permissions) { %i[view_project manage_members] }
-  let(:global_permissions) { %i[manage_user] }
+  let(:global_permissions) { %i[create_user manage_user] } # TODO: Figure out why create_user is not enough here
   let(:principal) { build(:invited_user) }
   let(:modal) do
     Components::Users::InviteUserModal.new project:,
@@ -76,21 +76,24 @@ describe 'Invite user modal custom fields', js: true do
   end
 
   it 'shows the required fields during the principal step' do
-    visit home_path
+    retry_block do
+      visit home_path
 
-    quick_add.expect_visible
+      quick_add.expect_visible
 
-    quick_add.toggle
+      quick_add.toggle
 
-    quick_add.click_link 'Invite user'
+      wait_for_network_idle
 
-    modal.project_step
+      quick_add.click_link 'Invite user'
 
-    # Fill the principal and try to go to next
-    sleep 1
-    modal.principal_step
+      modal.project_step
 
-    expect(page).to have_selector('form.ng-invalid', wait: 10)
+      # Fill the principal and try to go to next
+      modal.principal_step
+
+      page.find('form.ng-invalid', wait: 10)
+    end
 
     modal.within_modal do
       expect(page).to have_text "bool can't be blank."
@@ -116,13 +119,13 @@ describe 'Invite user modal custom fields', js: true do
     modal.click_next
 
     # Remaining steps
+    modal.expect_text "Invite user"
     modal.confirmation_step
     modal.click_modal_button 'Send invitation'
-    modal.expect_text "Invite user"
 
     # Close
-    modal.click_modal_button 'Send invitation'
     modal.expect_text "#{principal.mail} was invited!"
+    modal.click_modal_button 'Continue'
 
     # Expect to be added to project
     invited = project.users.last

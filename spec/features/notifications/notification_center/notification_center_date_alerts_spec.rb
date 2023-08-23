@@ -2,12 +2,23 @@ require 'spec_helper'
 require 'features/page_objects/notification'
 
 # rubocop:disable RSpec/ScatteredLet
-describe "Notification center date alerts", js: true, with_settings: { journal_aggregation_time_minutes: 0 } do
+RSpec.describe "Notification center date alerts",
+               js: true,
+               with_cuprite: true,
+               with_settings: { journal_aggregation_time_minutes: 0 } do
   include ActiveSupport::Testing::TimeHelpers
 
-  shared_let(:time_zone) { ActiveSupport::TimeZone['Europe/Berlin'] }
+  # Find an assignable time zone with the same UTC offset as the local time zone
+  def find_compatible_local_time_zone
+    local_offset = Time.now.gmt_offset # rubocop:disable Rails/TimeZone
+    time_zone = UserPreferences::UpdateContract.assignable_time_zones
+                                               .find { |tz| tz.now.utc_offset == local_offset }
+    time_zone or raise "Unable to find an assignable time zone with #{local_offset} seconds offset."
+  end
+
+  shared_let(:time_zone) { find_compatible_local_time_zone }
   shared_let(:user) do
-    create(:user, preferences: { time_zone: time_zone.name }).tap do |user|
+    create(:user, preferences: { time_zone: time_zone.tzinfo.canonical_zone.name }).tap do |user|
       user.notification_settings.first.update(
         start_date: 7,
         due_date: 3,
@@ -28,7 +39,7 @@ describe "Notification center date alerts", js: true, with_settings: { journal_a
     # we need to pretend that the journal records have been created before that time.
     # https://github.com/opf/openproject/pull/11678#issuecomment-1328011996
     #
-    work_package.journals.update_all created_at: Time.zone.now.change(hour: 0, minute: 0)
+    work_package.journals.update_all created_at: time_zone.now.change(hour: 0, minute: 0)
     work_package
   end
 
@@ -172,10 +183,14 @@ describe "Notification center date alerts", js: true, with_settings: { journal_a
     timezone.now.change(time_hash(time))
   end
 
+  # early in the morning, a bit after 1:00 AM local time, the notifications get
+  # created by the job
+  let(:notifications_creation_time) { timezone_time('1:04', time_zone) }
+
   def run_create_date_alerts_notifications_job
     create_date_alerts_service = Notifications::ScheduleDateAlertsNotificationsJob::Service
                                    .new([timezone_time('1:00', time_zone)])
-    travel_to(timezone_time('1:04', time_zone))
+    travel_to(notifications_creation_time)
     create_date_alerts_service.call
     travel_back
   end
@@ -185,6 +200,7 @@ describe "Notification center date alerts", js: true, with_settings: { journal_a
     perform_enqueued_jobs
     login_as user
     visit notifications_center_path
+    wait_for_reload
   end
 
   context 'without date alerts ee' do
@@ -222,6 +238,7 @@ describe "Notification center date alerts", js: true, with_settings: { journal_a
 
       # When switch to date alerts, it shows the alert, no longer the mention
       side_menu.click_item 'Date alert'
+      wait_for_network_idle
       center.expect_item(notification_wp_double_date_alert, 'Finish date is in 1 day')
       center.expect_no_item(notification_wp_double_mention)
 
@@ -238,6 +255,7 @@ describe "Notification center date alerts", js: true, with_settings: { journal_a
       center.click_item notification_wp_start_past
       split_screen = Pages::SplitWorkPackage.new wp_start_past
       split_screen.expect_tab :overview
+      wait_for_network_idle
 
       # We expect no badge count
       activity_tab.expect_no_notification_badge
@@ -246,13 +264,15 @@ describe "Notification center date alerts", js: true, with_settings: { journal_a
       center.click_item notification_wp_double_date_alert
       split_screen = Pages::SplitWorkPackage.new wp_double_notification
       split_screen.expect_tab :overview
+      wait_for_network_idle
 
       # We expect one badge
       activity_tab.expect_notification_count 1
 
       # When a work package is updated to a different date
-      wp_double_notification.update_column(:due_date, 5.days.from_now)
+      wp_double_notification.update_column(:due_date, time_zone.now + 5.days)
       page.driver.refresh
+      wait_for_reload
 
       center.expect_item(notification_wp_double_date_alert, 'Finish date is in 5 days')
       center.expect_no_item(notification_wp_double_mention)

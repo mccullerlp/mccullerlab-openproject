@@ -1,11 +1,11 @@
 require_relative '../spec_helper'
 require_relative './shared_2fa_examples'
 
-describe 'activating an invited account',
-         js: true,
-         with_settings: {
-           plugin_openproject_two_factor_authentication: { 'active_strategies' => [:developer] }
-         } do
+RSpec.describe 'activating an invited account',
+               js: true,
+               with_settings: {
+                 plugin_openproject_two_factor_authentication: { 'active_strategies' => [:developer] }
+               } do
   let(:user) do
     user = build(:user, first_login: true)
     UserInvitation.invite_user! user
@@ -51,7 +51,7 @@ describe 'activating an invited account',
 
       activate!
 
-      expect(page).to have_selector('.flash.notice', text: 'Developer strategy generated the following one-time password:')
+      expect(page).to have_selector('.op-toast.-success', text: 'Developer strategy generated the following one-time password:')
 
       SeleniumHubWaiter.wait
       fill_in I18n.t(:field_otp), with: sms_token
@@ -64,7 +64,7 @@ describe 'activating an invited account',
     it 'handles faulty user input on two factor authentication' do
       activate!
 
-      expect(page).to have_selector('.flash.notice', text: 'Developer strategy generated the following one-time password:')
+      expect(page).to have_selector('.op-toast.-success', text: 'Developer strategy generated the following one-time password:')
 
       fill_in I18n.t(:field_otp), with: 'asdf' # faulty token
       click_button I18n.t(:button_login)

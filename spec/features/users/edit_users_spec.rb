@@ -28,23 +28,23 @@
 
 require 'spec_helper'
 
-describe 'edit users', js: true do
+RSpec.describe 'edit users', js: true, with_cuprite: true do
   shared_let(:admin) { create(:admin) }
   let(:current_user) { admin }
   let(:user) { create(:user, mail: 'foo@example.com') }
 
-  let!(:auth_source) { create(:auth_source) }
+  let!(:auth_source) { create(:ldap_auth_source) }
 
   before do
     allow(User).to receive(:current).and_return current_user
   end
 
   def auth_select
-    find :css, 'select#user_auth_source_id'
+    find 'select#user_ldap_auth_source_id'
   end
 
   def user_password
-    find :css, 'input#user_password'
+    find 'input#user_password'
   end
 
   context 'with internal authentication' do
@@ -60,13 +60,13 @@ describe 'edit users', js: true do
     it 'hides password settings when switching to an LDAP auth source' do
       auth_select.select auth_source.name
 
-      expect(page).not_to have_selector('input#user_password')
+      expect(page).not_to have_field('#user_password')
     end
   end
 
   context 'with external authentication' do
     before do
-      user.auth_source = auth_source
+      user.ldap_auth_source = auth_source
       user.save!
 
       visit edit_user_path(user)
@@ -74,7 +74,7 @@ describe 'edit users', js: true do
 
     it 'shows external authentication being selected and no password settings' do
       expect(auth_select.value).to eq auth_source.id.to_s
-      expect(page).not_to have_selector('input#user_password')
+      expect(page).not_to have_field('#user_password')
     end
 
     it 'shows password settings when switching back to internal authentication' do
@@ -85,7 +85,7 @@ describe 'edit users', js: true do
   end
 
   context 'as global user' do
-    shared_let(:global_manage_user) { create(:user, global_permission: :manage_user) }
+    shared_let(:global_manage_user) { create(:user, global_permission: %i[manage_user create_user]) }
     let(:current_user) { global_manage_user }
 
     it 'can too edit the user' do
@@ -95,25 +95,29 @@ describe 'edit users', js: true do
       expect(page).not_to have_selector('.users-and-permissions-menu-item', text: 'Users and permissions')
       expect(page).to have_selector('.users-menu-item.selected', text: 'Users')
 
-      expect(page).to have_selector 'select#user_auth_source_id'
-      expect(page).not_to have_selector 'input#user_password'
+      expect(page).to have_select(id: 'user_ldap_auth_source_id')
+      expect(page).not_to have_field '#user_password'
 
       expect(page).to have_selector '#user_login'
       expect(page).to have_selector '#user_firstname'
       expect(page).to have_selector '#user_lastname'
       expect(page).to have_selector '#user_mail'
 
-      fill_in 'user[firstname]', with: 'NewName', fill_options: { clear: :backspace }
-      select auth_source.name, from: 'user[auth_source_id]'
+      firstname_field = find_by_id('user_firstname')
+      firstname_field.value.length.times do
+        firstname_field.send_keys(:backspace)
+      end
+      firstname_field.set 'NewName'
+      select auth_source.name, from: 'user[ldap_auth_source_id]'
 
       click_on 'Save'
 
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.')
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.')
 
       user.reload
 
       expect(user.firstname).to eq 'NewName'
-      expect(user.auth_source).to eq auth_source
+      expect(user.ldap_auth_source).to eq auth_source
     end
 
     it 'can reinvite the user' do
@@ -121,7 +125,7 @@ describe 'edit users', js: true do
 
       click_on 'Send invitation'
 
-      expect(page).to have_selector('.flash.notice', text: 'An invitation has been sent to foo@example.com')
+      expect(page).to have_selector('.op-toast.-success', text: 'An invitation has been sent to foo@example.com')
     end
   end
 end

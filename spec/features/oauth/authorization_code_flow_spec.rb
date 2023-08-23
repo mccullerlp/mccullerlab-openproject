@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'OAuth authorization code flow',
-         js: true do
+RSpec.describe 'OAuth authorization code flow',
+               js: true do
   let!(:user) { create(:user) }
   let!(:redirect_uri) { 'urn:ietf:wg:oauth:2.0:oob' }
   let!(:allowed_redirect_uri) { redirect_uri }
@@ -96,13 +96,13 @@ describe 'OAuth authorization code flow',
     # Revoke the application
     within("#oauth-application-grant-#{app.id}") do
       SeleniumHubWaiter.wait
-      click_on 'Revoke'
+      find("[data-qa-selector='oauth-token-row-#{app.id}-revoke']").click
     end
 
     page.driver.browser.switch_to.alert.accept
 
     # Should be back on access_token path
-    expect(page).to have_selector('.flash.notice')
+    expect(page).to have_selector('.op-toast.-success')
     expect(page).not_to have_selector("[id^=oauth-application-grant]")
 
     expect(page).to have_current_path /\/my\/access_token/

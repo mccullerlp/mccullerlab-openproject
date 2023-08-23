@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Custom actions me value', js: true do
+RSpec.describe 'Custom actions me value', js: true, with_cuprite: true, with_ee: %i[custom_actions] do
   shared_let(:admin) { create(:admin) }
 
   let(:permissions) { %i(view_work_packages edit_work_packages) }
@@ -54,7 +54,6 @@ describe 'Custom actions me value', js: true do
   let(:index_ca_page) { Pages::Admin::CustomActions::Index.new }
 
   before do
-    with_enterprise_token(:custom_actions)
     login_as(admin)
   end
 
@@ -63,11 +62,8 @@ describe 'Custom actions me value', js: true do
     index_ca_page.visit!
 
     new_ca_page = index_ca_page.new
-    retry_block do
-      new_ca_page.visit!
-      new_ca_page.set_name('Set CF to me')
-      new_ca_page.add_action(custom_field.name, I18n.t('custom_actions.actions.assigned_to.executing_user_value'))
-    end
+    new_ca_page.set_name('Set CF to me')
+    new_ca_page.add_action(custom_field.name, I18n.t('custom_actions.actions.assigned_to.executing_user_value'))
 
     new_ca_page.create
 

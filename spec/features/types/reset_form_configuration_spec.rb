@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Reset form configuration', js: true do
+RSpec.describe 'Reset form configuration', js: true do
   shared_let(:admin) { create(:admin) }
   let(:type) { create(:type) }
 
@@ -36,14 +36,13 @@ describe 'Reset form configuration', js: true do
   let(:form) { Components::Admin::TypeConfigurationForm.new }
   let(:dialog) { Components::ConfirmationDialog.new }
 
-  describe "with EE token and CFs" do
+  describe "with EE token and CFs", with_ee: %i[edit_attribute_groups] do
     let(:custom_fields) { [custom_field] }
     let(:custom_field) { create(:integer_issue_custom_field, is_required: true, name: 'MyNumber') }
     let(:cf_identifier) { custom_field.attribute_name }
     let(:cf_identifier_api) { cf_identifier.camelcase(:lower) }
 
     before do
-      with_enterprise_token(:edit_attribute_groups)
       project
       custom_field
 
@@ -61,7 +60,7 @@ describe 'Reset form configuration', js: true do
       form.expect_attribute(key: cf_identifier)
 
       form.save_changes
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
       SeleniumHubWaiter.wait
       form.reset_button.click

@@ -30,7 +30,7 @@ require 'spec_helper'
 require_relative './../support//board_index_page'
 require_relative './../support/board_page'
 
-describe 'Status action board', js: true do
+RSpec.describe 'Status action board', js: true, with_ee: %i[board_view] do
   let(:user) do
     create(:user,
            member_in_project: project,
@@ -85,7 +85,6 @@ describe 'Status action board', js: true do
   end
 
   before do
-    with_enterprise_token :board_view
     project
     login_as(user)
   end
@@ -95,7 +94,7 @@ describe 'Status action board', js: true do
       board_index.visit!
 
       # Create new board
-      board_page = board_index.create_board action: :Status
+      board_page = board_index.create_board action: 'Status'
 
       # expect lists of default status
       board_page.expect_list 'Open'
@@ -112,7 +111,7 @@ describe 'Status action board', js: true do
       board_index.visit!
 
       # Create new board
-      board_page = board_index.create_board action: :Status
+      board_page = board_index.create_board action: 'Status'
 
       board_page.add_list option: 'Whatever'
       board_page.expect_list 'Whatever'
@@ -153,7 +152,8 @@ describe 'Status action board', js: true do
       board_index.visit!
 
       # Create new board
-      board_page = board_index.create_board action: :Status
+      board_page = board_index.create_board title: 'My Status Board',
+                                            action: 'Status'
 
       # expect lists of default status
       board_page.expect_list 'Open'
@@ -162,7 +162,7 @@ describe 'Status action board', js: true do
       board_page.expect_list 'Closed'
 
       board_page.board(reload: true) do |board|
-        expect(board.name).to eq 'Action board (status)'
+        expect(board.name).to eq 'My Status Board'
         queries = board.contained_queries
         expect(queries.count).to eq(2)
 
@@ -197,7 +197,7 @@ describe 'Status action board', js: true do
 
       # Expect work package to be saved in query first
       subjects = WorkPackage.where(id: first.ordered_work_packages.pluck(:work_package_id)).pluck(:subject, :status_id)
-      expect(subjects).to match_array [['Task 1', open_status.id]]
+      expect(subjects).to contain_exactly(['Task 1', open_status.id])
 
       # Move item to Closed
       board_page.move_card(0, from: 'Open', to: 'Closed')
@@ -212,7 +212,7 @@ describe 'Status action board', js: true do
       end
 
       subjects = WorkPackage.where(id: second.ordered_work_packages.pluck(:work_package_id)).pluck(:subject, :status_id)
-      expect(subjects).to match_array [['Task 1', closed_status.id]]
+      expect(subjects).to contain_exactly(['Task 1', closed_status.id])
 
       # Try to drag to whatever, which has no workflow
       board_page.move_card(0, from: 'Closed', to: 'Whatever')
@@ -272,7 +272,7 @@ describe 'Status action board', js: true do
       expect(queries.first.ordered_work_packages).to be_empty
 
       subjects = WorkPackage.where(id: second.ordered_work_packages.pluck(:work_package_id))
-      expect(subjects.pluck(:subject, :status_id)).to match_array [['Task 1', closed_status.id]]
+      expect(subjects.pluck(:subject, :status_id)).to contain_exactly(['Task 1', closed_status.id])
 
       # Open remaining in split view
       wp = second.ordered_work_packages.first.work_package
@@ -299,14 +299,15 @@ describe 'Status action board', js: true do
       board_index.visit!
 
       # Create new board
-      board_page = board_index.create_board action: :Status
+      board_page = board_index.create_board action: 'Status'
 
       # expect lists of default status
       board_page.expect_list 'Open'
       expect(board_page.list_count).to eq(1)
 
+      board_index.visit!
       # Create another status board
-      second_board_page = board_index.create_board action: :Status, via_toolbar: true
+      second_board_page = board_index.create_board action: 'Status', via_toolbar: false
 
       # Expect only one list with the default status
       second_board_page.expect_list 'Open'

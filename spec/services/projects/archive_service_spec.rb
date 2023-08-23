@@ -28,13 +28,26 @@
 
 require 'spec_helper'
 
-describe Projects::ArchiveService do
+RSpec.describe Projects::ArchiveService do
   let(:project) { create(:project) }
   let(:subproject1) { create(:project) }
   let(:subproject2) { create(:project) }
   let(:subproject3) { create(:project) }
   let(:user) { create(:admin) }
   let(:instance) { described_class.new(user:, model: project) }
+
+  it 'sends the notification' do
+    allow(OpenProject::Notifications).to receive(:send)
+
+    expect(instance.call).to be_truthy
+
+    expect(OpenProject::Notifications)
+      .to(have_received(:send)
+            .with(OpenProject::Events::PROJECT_ARCHIVED, project:))
+    expect(OpenProject::Notifications)
+      .to(have_received(:send)
+            .with(OpenProject::Events::PROJECT_ARCHIVED, project:))
+  end
 
   context 'with project without any subprojects' do
     it 'archives the project' do

@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe UpdateQueryFromParamsService,
-         type: :model do
+RSpec.describe UpdateQueryFromParamsService,
+               type: :model do
   let(:user) { build_stubbed(:user) }
   let(:query) { build_stubbed(:query) }
 
@@ -192,7 +192,13 @@ describe UpdateQueryFromParamsService,
     end
 
     context "when providing timestamps" do
-      let(:timestamps) { [Timestamp.parse("2022-10-29T23:01:23Z"), Timestamp.parse("PT0S")] }
+      let(:timestamps) do
+        [
+          Timestamp.parse("2022-10-29T23:01:23Z"),
+          Timestamp.parse("oneWeekAgo@12:00+00:00"),
+          Timestamp.parse("PT0S")
+        ]
+      end
       let(:params) { { timestamps: } }
 
       it 'sets the timestamps' do

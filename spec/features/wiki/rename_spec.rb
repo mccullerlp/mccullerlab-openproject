@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Wiki page', js: true do
+RSpec.describe 'Wiki page', js: true do
   let(:project) { create(:project, enabled_module_names: %w[wiki]) }
   let(:user) do
     create(:user,
@@ -37,7 +37,7 @@ describe 'Wiki page', js: true do
                                        rename_wiki_pages])
   end
   let!(:wiki_page) do
-    create(:wiki_page_with_content, wiki: project.wiki, title: initial_name)
+    create(:wiki_page, wiki: project.wiki, title: initial_name)
   end
   let(:initial_name) { 'Initial name' }
   let(:rename_name) { 'Rename name' }

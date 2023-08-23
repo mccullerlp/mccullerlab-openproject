@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe API::V3::Capabilities::CapabilitySqlRepresenter, 'rendering' do
+RSpec.describe API::V3::Capabilities::CapabilitySqlRepresenter, 'rendering' do
   include API::V3::Utilities::PathHelper
 
   let(:scope) do
@@ -128,7 +128,7 @@ describe API::V3::Capabilities::CapabilitySqlRepresenter, 'rendering' do
   context 'with a global permission' do
     let(:principal) do
       create(:user,
-             global_permission: %i[manage_user],
+             global_permission: %i[create_user],
              member_in_project: project,
              member_with_permissions: [])
     end

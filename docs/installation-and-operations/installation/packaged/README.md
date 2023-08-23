@@ -27,22 +27,22 @@ The package will:
 The package is available for the following Linux distributions:
 
 | Distribution (64 bits only)                 |
-| ------------------------------------------- |
+|---------------------------------------------|
 | [Ubuntu 22.04 Jammy](#ubuntu-2204)          |
 | [Ubuntu 20.04 Focal](#ubuntu-2004)          |
-| [Ubuntu 18.04 Bionic Beaver](#ubuntu-1804)  |
-| [Ubuntu 16.04 Xenial Xerus](#ubuntu-1604)   |
-| [Debian 11 Bullseye](#debian-11)              |
+| [Debian 12 Bookworm](#debian-12)            |
+| [Debian 11 Bullseye](#debian-11)            |
 | [Debian 10 Buster](#debian-10)              |
-| [CentOS/RHEL 8.x](#centos-8--rhel-8)                    |
-| [CentOS/RHEL 7.x](#centos-7--rhel-7)                    |
+| [CentOS/RHEL 9.x](#centos-9--rhel-9)        |
+| [CentOS/RHEL 8.x](#centos-8--rhel-8)        |
+| [CentOS/RHEL 7.x](#centos-7--rhel-7)        |
 | [Suse Linux Enterprise Server 15](#sles-15) |
 | [Suse Linux Enterprise Server 12](#sles-12) |
 
 Please ensure that you are running on a 64bit system before proceeding with the installation. You can check by running the `uname -i` command on the target server and verifying that it outputs `x86_64`:
 
 ```bash
-$ uname -i
+$ uname -m
 x86_64
 ```
 
@@ -62,16 +62,14 @@ sudo apt-get install apt-transport-https ca-certificates wget
 Import the PGP key used to sign our packages:
 
 ```bash
-wget -qO- https://dl.packager.io/srv/opf/openproject/key | sudo apt-key add -
+sudo wget -O /etc/apt/trusted.gpg.d/openproject.asc https://dl.packager.io/srv/opf/openproject/key
 ```
-
-Note: you might get a warning when importing the key `Warning: apt-key is deprecated. Manage keyring files in trusted.gpg.d instead (see apt-key(8))`. This happens because APT has updated the way it manages signing keys, and the package provider is not supporting the new way yet.
 
 Add the OpenProject package source:
 
 ```bash
 sudo wget -O /etc/apt/sources.list.d/openproject.list \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/ubuntu/22.04.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/ubuntu/22.04.repo
 ```
 
 Download the OpenProject package:
@@ -104,38 +102,7 @@ Add the OpenProject package source:
 
 ```bash
 sudo wget -O /etc/apt/sources.list.d/openproject.list \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/ubuntu/20.04.repo
-```
-
-Download the OpenProject package:
-
-```bash
-sudo apt-get update
-sudo apt-get install openproject
-```
-
-Then finish the installation by reading the [*Initial configuration*](#initial-configuration) section.
-
-### Ubuntu 18.04
-
-Update the `apt` package index and install packages to allow `apt` to use a repository over HTTPS:
-
-```bash
-sudo apt-get update
-sudo apt-get install apt-transport-https ca-certificates wget
-```
-
-Import the PGP key used to sign our packages:
-
-```bash
-wget -qO- https://dl.packager.io/srv/opf/openproject/key | sudo apt-key add -
-```
-
-Add the OpenProject package source:
-
-```bash
-sudo wget -O /etc/apt/sources.list.d/openproject.list \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/ubuntu/18.04.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/ubuntu/20.04.repo
 ```
 
 Download the OpenProject package:
@@ -149,33 +116,66 @@ Then finish the installation by reading the [*Initial configuration*](#initial-c
 
 ## Debian Installation
 
-### Debian 11
+### Debian 12
 
-Update the `apt` package index and install packages to allow `apt` to use a repository over HTTPS:
+As root update the `apt` package index and install packages to allow `apt` to use a repository over HTTPS:
 
 ```bash
-sudo apt-get update
-sudo apt-get install apt-transport-https ca-certificates wget
+su -
+apt update
+apt install apt-transport-https ca-certificates wget
 ```
 
 Import the PGP key used to sign our packages:
 
 ```bash
-wget -qO- https://dl.packager.io/srv/opf/openproject/key | sudo apt-key add -
+wget -qO- https://dl.packager.io/srv/opf/openproject/key | gpg --dearmor > /etc/apt/trusted.gpg.d/packager-io.gpg
 ```
 
 Add the OpenProject package source:
 
 ```bash
-sudo wget -O /etc/apt/sources.list.d/openproject.list \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/debian/11.repo
+wget -O /etc/apt/sources.list.d/openproject.list \
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/debian/12.repo
 ```
 
 Download the OpenProject package:
 
 ```bash
-sudo apt-get update
-sudo apt-get install openproject
+apt update
+apt install openproject
+```
+
+Then finish the installation by reading the [*Initial configuration*](#initial-configuration) section.
+
+### Debian 11
+
+As root update the `apt` package index and install packages to allow `apt` to use a repository over HTTPS:
+
+```bash
+su -
+apt update
+apt install apt-transport-https ca-certificates wget
+```
+
+Import the PGP key used to sign our packages:
+
+```bash
+wget -qO- https://dl.packager.io/srv/opf/openproject/key | gpg --dearmor > /etc/apt/trusted.gpg.d/packager-io.gpg
+```
+
+Add the OpenProject package source:
+
+```bash
+wget -O /etc/apt/sources.list.d/openproject.list \
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/debian/11.repo
+```
+
+Download the OpenProject package:
+
+```bash
+apt update
+apt install openproject
 ```
 
 Then finish the installation by reading the [*Initial configuration*](#initial-configuration) section.
@@ -199,7 +199,7 @@ Add the OpenProject package source:
 
 ```bash
 sudo wget -O /etc/apt/sources.list.d/openproject.list \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/debian/10.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/debian/10.repo
 ```
 
 Download the OpenProject package:
@@ -213,13 +213,39 @@ Then finish the installation by reading the [*Initial configuration*](#initial-c
 
 ## CentOS Installation
 
+### CentOS 9 / RHEL 9
+
+Add the OpenProject package source:
+
+```bash
+sudo wget -O /etc/yum.repos.d/openproject.repo \
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/el/9.repo
+```
+
+If it is not already enabled, make sure to enable [Extra Packages for Enterprise Linux](https://fedoraproject.org/wiki/EPEL) (EPEL).
+
+```bash
+sudo dnf install -y epel-release
+```
+
+Download the OpenProject package:
+
+```bash
+sudo yum install openproject
+```
+
+Then finish the installation by reading the [*Initial configuration*](#initial-configuration) section.
+
+> **Note:** On this distribution full-text extraction for attachments [*is not supported*](#full-text-extraction-not-supported) by default.
+>
+
 ### CentOS 8 / RHEL 8
 
 Add the OpenProject package source:
 
 ```bash
 sudo wget -O /etc/yum.repos.d/openproject.repo \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/el/8.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/el/8.repo
 ```
 
 If it is not already enabled, make sure to enable [Extra Packages for Enterprise Linux](https://fedoraproject.org/wiki/EPEL) (EPEL).
@@ -245,7 +271,7 @@ Add the OpenProject package source:
 
 ```bash
 sudo wget -O /etc/yum.repos.d/openproject.repo \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/el/7.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/el/7.repo
 ```
 
 Download the OpenProject package:
@@ -282,7 +308,7 @@ Add the OpenProject package source:
 
 ```bash
 wget -O /etc/zypp/repos.d/openproject.repo \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/sles/15.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/sles/15.repo
 ```
 
 If you already had an old package source that is being updated you must refresh
@@ -306,7 +332,7 @@ Add the OpenProject package source:
 
 ```bash
 wget -O /etc/zypp/repos.d/openproject.repo \
-  https://dl.packager.io/srv/opf/openproject/stable/12/installer/sles/12.repo
+  https://dl.packager.io/srv/opf/openproject/stable/13/installer/sles/12.repo
 ```
 
 If you already had an old package source that is being updated you must refresh
@@ -369,8 +395,8 @@ You can find more about the BIM edition on [this page](https://www.openproject.o
 > This wizard step is only available on the following distributions:
 >
 > * RHEL/CentOS 8
+> * Ubuntu 22.04
 > * Ubuntu 20.04
-> * Ubuntu 18.04
 > * Debian 10
 > * Debian 11
 >
@@ -559,6 +585,16 @@ Next, tell OpenProject whether you have SSL termination enabled somewhere in you
 ![HTTPS setting](07b-protocol.png)
 
 
+
+## Step 8: Default language
+
+> **Note:** This step is only shown on the very first installation of OpenProject, as it affects only the initial seeding of the basic and demo data. Changing this value after installation will have no effect.
+
+OpenProject can be used with a wide variety of languages. The initial data of the instance (basic data such as status names, types, etc.) as well as data for demonstrational purposes will be created in the language you select in this screen. Move through the list using the arrow keys and select the default language.
+
+Also, this setting will control what is the default language for new users if their browser language is not available in the system.
+
+![Default language screen](08-default-language.png)
 
 ## Result
 

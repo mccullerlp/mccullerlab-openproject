@@ -32,6 +32,7 @@ FactoryBot.define do
     project
     start_time { Date.tomorrow + 10.hours }
     duration { 1.0 }
+    location { 'https://some-url.com' }
     m.sequence(:title) { |n| "Meeting #{n}" }
 
     after(:create) do |meeting, evaluator|

@@ -1,13 +1,13 @@
 require_relative '../../spec_helper'
 require_relative '../shared_2fa_examples'
 
-describe 'Login with 2FA remember cookie',
-         js: true, with_settings: {
-           plugin_openproject_two_factor_authentication: {
-             active_strategies: [:developer],
-             allow_remember_for_days: 30
-           }
-         } do
+RSpec.describe 'Login with 2FA remember cookie',
+               js: true, with_settings: {
+                 plugin_openproject_two_factor_authentication: {
+                   active_strategies: [:developer],
+                   allow_remember_for_days: 30
+                 }
+               } do
   let(:user_password) do
     "user!user!"
   end
@@ -61,7 +61,7 @@ describe 'Login with 2FA remember cookie',
       visit my_2fa_devices_path
 
       find('.two-factor-authentication--remove-remember-cookie-link').click
-      expect(page).to have_selector('.flash.notice')
+      expect(page).to have_selector('.op-toast.-success')
       expect(page).not_to have_selector('.two-factor-authentication--remove-remember-cookie-link')
 
       # Log out and in again

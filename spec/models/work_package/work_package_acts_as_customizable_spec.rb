@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe WorkPackage, 'acts_as_customizable' do
+RSpec.describe WorkPackage, 'acts_as_customizable' do
   let(:type) { create(:type_standard) }
   let(:project) { create(:project, types: [type]) }
   let(:user) { create(:user) }
@@ -48,6 +48,8 @@ describe WorkPackage, 'acts_as_customizable' do
   def setup_custom_field(cf)
     project.work_package_custom_fields << cf
     type.custom_fields << cf
+    # Void the custom field caching
+    RequestStore.clear!
   end
 
   describe '#custom_field_values=' do
@@ -155,6 +157,106 @@ describe WorkPackage, 'acts_as_customizable' do
 
       it 'returns no changes' do
         expect(model_instance.custom_field_changes).to be_empty
+      end
+    end
+  end
+
+  describe '.preload_available_custom_fields/#available_custom_fields' do
+    let(:project) { create(:project) }
+    let(:type) { create(:type) }
+    let(:work_package) do
+      build(:work_package,
+            project:,
+            type:)
+    end
+
+    let(:project2) { create(:project) }
+    let(:type2) { create(:type) }
+    let(:work_package2) do
+      build(:work_package,
+            project: project2,
+            type: type2)
+    end
+
+    let!(:custom_field_of_project_and_type) do
+      create(:work_package_custom_field,
+             name: 'Custom field of type and project').tap do |cf|
+        project.work_package_custom_fields << cf
+        type.custom_fields << cf
+      end
+    end
+    let!(:custom_field_of_project_not_type) do
+      create(:work_package_custom_field,
+             name: 'Custom field of project not type').tap do |cf|
+        project.work_package_custom_fields << cf
+      end
+    end
+    let!(:custom_field_of_type_not_project) do
+      create(:work_package_custom_field,
+             name: 'Custom field of type not project').tap do |cf|
+        type.custom_fields << cf
+      end
+    end
+    let!(:custom_field_for_all_and_type) do
+      create(:work_package_custom_field,
+             name: 'Custom field for all and type',
+             is_for_all: true).tap do |cf|
+        type.custom_fields << cf
+      end
+    end
+    let!(:custom_field_for_all_not_type) do
+      create(:work_package_custom_field,
+             name: 'Custom field for all not type',
+             is_for_all: true)
+    end
+
+    let!(:custom_field_of_projects_and_types_for_all) do
+      create(:work_package_custom_field,
+             name: 'Custom field for all and many types and projects',
+             is_for_all: true).tap do |cf|
+        project.work_package_custom_fields << cf
+        type.custom_fields << cf
+        project2.work_package_custom_fields << cf
+        type2.custom_fields << cf
+      end
+    end
+
+    context 'when preloading the custom fields' do
+      before do
+        described_class.preload_available_custom_fields([work_package, work_package2])
+        # Bad replacement to check that no database query is run.
+        allow(WorkPackageCustomField)
+          .to receive(:left_joins)
+                .and_call_original
+      end
+
+      it 'returns all custom fields of the project and type for work_package' do
+        expect(work_package.available_custom_fields)
+          .to contain_exactly(custom_field_of_project_and_type,
+                              custom_field_for_all_and_type,
+                              custom_field_of_projects_and_types_for_all)
+      end
+
+      it 'returns all custom fields of the project and type for work_package2' do
+        expect(work_package2.available_custom_fields)
+          .to contain_exactly(custom_field_of_projects_and_types_for_all)
+      end
+
+      it 'does not call the database' do
+        work_package.available_custom_fields
+        work_package2.available_custom_fields
+
+        expect(WorkPackageCustomField)
+          .not_to have_received(:left_joins)
+      end
+    end
+
+    context 'when not preloading the custom fields' do
+      it 'returns all custom fields of the project and type' do
+        expect(work_package.available_custom_fields)
+          .to contain_exactly(custom_field_of_project_and_type,
+                              custom_field_for_all_and_type,
+                              custom_field_of_projects_and_types_for_all)
       end
     end
   end

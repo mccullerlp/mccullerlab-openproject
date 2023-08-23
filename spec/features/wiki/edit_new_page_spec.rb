@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'Editing a new wiki page', js: true do
+RSpec.describe 'Editing a new wiki page', js: true do
   let(:project) { create(:project, enabled_module_names: %w[wiki]) }
   let(:user) { create(:admin) }
 
@@ -38,9 +38,9 @@ describe 'Editing a new wiki page', js: true do
 
   it 'allows creating a wiki page from link' do
     visit project_wiki_path(project, id: :foobar)
-    expect(page).to have_field 'content_page_title', with: 'Foobar'
+    expect(page).to have_field 'page_title', with: 'Foobar'
     click_on 'Save'
 
-    expect(page).to have_selector('.flash.notice', text: 'Successful creation.', wait: 10)
+    expect(page).to have_selector('.op-toast.-success', text: 'Successful creation.', wait: 10)
   end
 end

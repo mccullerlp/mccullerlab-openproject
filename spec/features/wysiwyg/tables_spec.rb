@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg tables',
-         js: true do
+RSpec.describe 'Wysiwyg tables',
+               js: true do
   shared_let(:admin) { create(:admin) }
   let(:user) { admin }
 
@@ -68,7 +68,7 @@ describe 'Wysiwyg tables',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector('table td', text: 'h1')
@@ -80,7 +80,6 @@ describe 'Wysiwyg tables',
 
       it 'can add tables with headers' do
         editor.in_editor do |container, editable|
-          # strangely, we need visible: :all here
           editor.click_toolbar_button 'Insert table'
           # 2x2
           container.find('.ck-insert-table-dropdown-grid-box:nth-of-type(12)').click
@@ -101,7 +100,7 @@ describe 'Wysiwyg tables',
           tds.first.send_keys :tab
 
           # Click row toolbar
-          editor.click_hover_toolbar_button 'RowRow'
+          editor.click_hover_toolbar_button 'Row'
 
           # Enable header row
           header_button = find('.ck-switchbutton', text: 'Header row')
@@ -118,7 +117,7 @@ describe 'Wysiwyg tables',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector('table th', text: 'h1')
@@ -183,7 +182,7 @@ describe 'Wysiwyg tables',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector('td[style*="background-color:#123456"]')
@@ -234,7 +233,7 @@ describe 'Wysiwyg tables',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           # table height and width is set on figure
@@ -299,7 +298,7 @@ describe 'Wysiwyg tables',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector('td[style*="width:250px"]')
@@ -317,9 +316,9 @@ describe 'Wysiwyg tables',
 
     describe 'editing a wiki page with tables' do
       let(:wiki_page) do
-        page = build(:wiki_page_with_content,
+        page = build(:wiki_page,
                      title: 'Wiki page with titles')
-        page.content.text = <<~MARKDOWN
+        page.text = <<~MARKDOWN
 
           ## This is markdown!
 

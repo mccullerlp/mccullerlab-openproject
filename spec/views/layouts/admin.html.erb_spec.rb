@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'layouts/admin' do
+RSpec.describe 'layouts/admin' do
   shared_let(:admin) { create(:admin) }
 
   include Redmine::MenuManager::MenuHelper
@@ -59,7 +59,7 @@ describe 'layouts/admin' do
       end
 
       it 'is shown' do
-        expect(rendered).to have_selector('a', text: I18n.t('label_ldap_authentication'))
+        expect(rendered).to have_selector('a', text: I18n.t(:label_ldap_auth_source_plural))
       end
     end
 
@@ -70,7 +70,7 @@ describe 'layouts/admin' do
       end
 
       it 'is hidden' do
-        expect(rendered).not_to have_selector('a', text: I18n.t('label_ldap_authentication'))
+        expect(rendered).not_to have_selector('a', text: I18n.t(:label_ldap_auth_source_plural))
       end
     end
   end

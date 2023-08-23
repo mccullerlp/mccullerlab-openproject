@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Enterprise trial management',
-         driver: :chrome_billy do
+RSpec.describe 'Enterprise trial management',
+               driver: :chrome_billy do
   let(:admin) { create(:admin) }
 
   let(:trial_id) { '1b6486b4-5a30-4042-8714-99d7c8e6b637' }
@@ -276,7 +276,7 @@ describe 'Enterprise trial management',
       # advance to close
       click_on 'Continue'
 
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
       expect(page).to have_selector('.attributes-key-value--value-container', text: 'OpenProject Test')
       expect(page).to have_selector('.attributes-key-value--value-container', text: '01/01/2020')
       expect(page).to have_selector('.attributes-key-value--value-container', text: '01/02/2020')

@@ -28,7 +28,9 @@
 
 require 'spec_helper'
 
-describe 'Attribute help texts', js: true do
+RSpec.describe 'Attribute help texts',
+               js: true,
+               with_cuprite: true do
   shared_let(:admin) { create(:admin) }
 
   let(:instance) { AttributeHelpText.last }
@@ -37,27 +39,26 @@ describe 'Attribute help texts', js: true do
   let(:image_fixture) { UploadedFile.load_from('spec/fixtures/files/image.png') }
   let(:enterprise_token) { true }
 
-  describe 'Work package help texts' do
+  describe 'Work package help texts', with_ee: %i[attribute_help_texts] do
     before do
-      with_enterprise_token(enterprise_token ? :attribute_help_texts : nil)
-
       login_as(admin)
       visit attribute_help_texts_path
     end
 
-    context 'with direct uploads (Regression #34285)', with_direct_uploads: true do
+    # TODO: Migrate to cuprite when the `better_cuprite_billy` driver is added
+    context 'with direct uploads (Regression #34285)', with_cuprite: false, with_direct_uploads: true do
       before do
         allow_any_instance_of(Attachment).to receive(:diskfile).and_return image_fixture
       end
 
       it 'can upload an image' do
-        page.find('.attribute-help-texts--create-button').click
+        find('.attribute-help-texts--create-button').click
         select 'Status', from: 'attribute_help_text_attribute_name'
 
         editor.set_markdown('My attribute help text')
         editor.drag_attachment image_fixture.path, 'Image uploaded on creation'
 
-        expect(page).to have_selector('[data-qa-selector="op-attachment-list-item"]', text: 'image.png')
+        editor.attachments_list.expect_attached('image.png')
         click_button 'Save'
 
         expect(instance.help_text).to include 'My attribute help text'
@@ -71,7 +72,7 @@ describe 'Attribute help texts', js: true do
 
         # Create help text
         # -> new
-        page.find('.attribute-help-texts--create-button').click
+        find('.attribute-help-texts--create-button').click
 
         # Set attributes
         # -> create
@@ -81,7 +82,7 @@ describe 'Attribute help texts', js: true do
         # Add an image
         # adding an image
         editor.drag_attachment image_fixture.path, 'Image uploaded on creation'
-        expect(page).to have_selector('[data-qa-selector="op-attachment-list-item"]', text: 'image.png')
+        editor.attachments_list.expect_attached('image.png')
         click_button 'Save'
 
         # Should now show on index for editing
@@ -105,7 +106,7 @@ describe 'Attribute help texts', js: true do
 
         # -> edit
         SeleniumHubWaiter.wait
-        page.find('.attribute-help-text--entry td a', text: 'Status').click
+        find('.attribute-help-text--entry td a', text: 'Status').click
         SeleniumHubWaiter.wait
         expect(page).to have_selector('#attribute_help_text_attribute_name[disabled]')
         editor.set_markdown(' ')
@@ -137,23 +138,22 @@ describe 'Attribute help texts', js: true do
         visit attribute_help_texts_path
 
         # Create new, status is now blocked
-        page.find('.attribute-help-texts--create-button').click
+        find('.attribute-help-texts--create-button').click
         expect(page).to have_selector('#attribute_help_text_attribute_name option', text: 'Assignee')
         expect(page).not_to have_selector('#attribute_help_text_attribute_name option', text: 'Status')
         visit attribute_help_texts_path
 
         # Destroy
-        page.find('.attribute-help-text--entry .icon-delete').click
-        page.driver.browser.switch_to.alert.accept
+        accept_alert do
+          find('.attribute-help-text--entry .icon-delete').click
+        end
 
         expect(page).to have_selector('.generic-table--no-results-container')
         expect(AttributeHelpText.count).to be_zero
       end
     end
 
-    context 'with help texts disallowed by the enterprise token' do
-      let(:enterprise_token) { false }
-
+    context 'with help texts disallowed by the enterprise token', with_ee: false do
       it 'hides CRUD to attribute help texts' do
         expect(page).to have_current_path /upsale/
         expect(page).to have_text I18n.t('attribute_help_texts.enterprise.description')

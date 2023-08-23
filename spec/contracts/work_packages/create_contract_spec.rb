@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'contracts/work_packages/shared_base_contract'
 
-describe WorkPackages::CreateContract do
+RSpec.describe WorkPackages::CreateContract do
   let(:work_package) do
     WorkPackage.new(project: work_package_project).tap do |wp|
       wp.extend(OpenProject::ChangedBySystem)
@@ -78,7 +78,7 @@ describe WorkPackages::CreateContract do
 
       it 'is not authorized' do
         expect(validated_contract.errors.symbols_for(:base))
-          .to match_array [:error_unauthorized]
+          .to contain_exactly(:error_unauthorized)
       end
     end
 
@@ -99,7 +99,7 @@ describe WorkPackages::CreateContract do
 
       it 'is not authorized' do
         expect(validated_contract.errors.symbols_for(:base))
-          .to match_array [:error_unauthorized]
+          .to contain_exactly(:error_unauthorized)
       end
     end
 
@@ -112,7 +112,7 @@ describe WorkPackages::CreateContract do
 
       it 'is not authorized' do
         expect(validated_contract.errors.symbols_for(:base))
-          .to match_array [:error_unauthorized]
+          .to contain_exactly(:error_unauthorized)
       end
     end
   end

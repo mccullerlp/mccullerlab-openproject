@@ -28,7 +28,7 @@
 
 require_relative '../../spec_helper'
 
-describe 'Create cost entry without rate permissions', js: true do
+RSpec.describe 'Create cost entry without rate permissions', js: true do
   shared_let(:type_task) { create(:type_task) }
   shared_let(:status) { create(:status, is_default: true) }
   shared_let(:priority) { create(:priority, is_default: true) }
@@ -78,7 +78,7 @@ describe 'Create cost entry without rate permissions', js: true do
     click_on 'Save'
 
     # Expect correct costs
-    expect(page).to have_selector('.flash.notice', text: I18n.t(:notice_cost_logged_successfully))
+    expect(page).to have_selector('.op-toast.-success', text: I18n.t(:notice_cost_logged_successfully))
     entry = CostEntry.last
     expect(entry.cost_type_id).to eq(cost_type.id)
     expect(entry.units).to eq(1.0)

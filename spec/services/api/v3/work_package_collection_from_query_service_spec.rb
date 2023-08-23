@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe API::V3::WorkPackageCollectionFromQueryService,
-         type: :model do
+RSpec.describe API::V3::WorkPackageCollectionFromQueryService,
+               type: :model do
   include API::V3::Utilities::PathHelper
 
   let(:query) do
@@ -236,7 +236,7 @@ describe API::V3::WorkPackageCollectionFromQueryService,
       end
 
       context 'when timestamps are given' do
-        let(:timestamps) { [Timestamp.parse("P-1Y"), Timestamp.now] }
+        let(:timestamps) { [Timestamp.parse("P-1Y"), Timestamp.parse("oneWeekAgo@12:00+00:00"), Timestamp.now] }
         let(:query) { build_stubbed(:query, timestamps:) }
 
         it 'has the query timestamps' do

@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg work package linking',
-         js: true do
+RSpec.describe 'Wysiwyg work package linking',
+               js: true do
   let(:user) { create(:admin) }
   let(:project) { create(:project, enabled_module_names: %w[wiki work_package_tracking]) }
   let(:work_package) { create(:work_package, subject: 'Foobar', project:) }
@@ -54,7 +54,7 @@ describe 'Wysiwyg work package linking',
       # Save wiki page
       click_on 'Save'
 
-      expect(page).to have_selector('.flash.notice')
+      expect(page).to have_selector('.op-toast.-success')
 
       within('#content') do
         expect(page).to have_selector('a.issue', count: 1)

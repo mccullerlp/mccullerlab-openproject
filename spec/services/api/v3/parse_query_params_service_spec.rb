@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe API::V3::ParseQueryParamsService,
-         type: :model do
+RSpec.describe API::V3::ParseQueryParamsService,
+               type: :model do
   let(:instance) { described_class.new }
   let(:params) { {} }
 
@@ -338,7 +338,17 @@ describe API::V3::ParseQueryParamsService,
 
       it_behaves_like 'transforms' do
         let(:params) { { timestamps: "-1y, now" } }
-        let(:expected) { { timestamps: [Timestamp.new("P-1Y"), Timestamp.parse("P-0Y")] } }
+        let(:expected) { { timestamps: [Timestamp.new("P-1Y"), Timestamp.new("PT0S")] } }
+      end
+
+      it_behaves_like 'transforms' do
+        let(:params) { { timestamps: "oneMonthAgo@11:00+00:00, now" } }
+        let(:expected) { { timestamps: [Timestamp.parse("oneMonthAgo@11:00+00:00"), Timestamp.new("PT0S")] } }
+      end
+
+      it_behaves_like 'transforms' do
+        let(:params) { { timestamps: "oneMonthAgo@11:00+00:00, oneWeekAgo@12:00+10:00" } }
+        let(:expected) { { timestamps: [Timestamp.parse("oneMonthAgo@11:00+00:00"), Timestamp.parse("oneWeekAgo@12:00+10:00")] } }
       end
 
       describe "for invalid parameters" do

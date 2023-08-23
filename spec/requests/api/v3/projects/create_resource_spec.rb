@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'rack/test'
 
-describe 'API v3 Project resource create', content_type: :json do
+RSpec.describe 'API v3 Project resource create', content_type: :json do
   include Rack::Test::Methods
   include API::V3::Utilities::PathHelper
 
@@ -107,11 +107,8 @@ describe 'API v3 Project resource create', content_type: :json do
         .at_path("statusExplanation")
     end
 
-    it 'creates a project and a status' do
+    it 'creates a project' do
       expect(Project.count)
-        .to be(1)
-
-      expect(Projects::Status.count)
         .to be(1)
     end
   end

@@ -29,7 +29,7 @@
 require 'spec_helper'
 require_relative './shared_contract_examples'
 
-describe Projects::CreateContract do
+RSpec.describe Projects::CreateContract do
   it_behaves_like 'project contract' do
     let(:project) do
       Project.new(name: project_name,
@@ -38,7 +38,8 @@ describe Projects::CreateContract do
                   active: project_active,
                   public: project_public,
                   parent: project_parent,
-                  status: project_status)
+                  status_code: project_status_code,
+                  status_explanation: project_status_explanation)
     end
     let(:permissions) { [:add_project] }
     let!(:allowed_to) do

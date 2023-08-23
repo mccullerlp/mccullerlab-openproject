@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe PermittedParams do
+RSpec.describe PermittedParams do
   let(:user) { build_stubbed(:user) }
   let(:admin) { build_stubbed(:admin) }
 
@@ -513,14 +513,14 @@ describe PermittedParams do
                        'mail',
                        'language',
                        'custom_fields',
-                       'auth_source_id',
+                       'ldap_auth_source_id',
                        'force_password_change']
 
     describe :user_create_as_admin do
       let(:attribute) { :user_create_as_admin }
-      let(:default_permissions) { %w[custom_fields firstname lastname language mail auth_source_id] }
+      let(:default_permissions) { %w[custom_fields firstname lastname language mail ldap_auth_source_id] }
 
-      context 'non-admin' do
+      context 'for a non-admin' do
         let(:hash) { all_permissions.zip(all_permissions).to_h }
 
         it 'permits default permissions' do
@@ -528,8 +528,8 @@ describe PermittedParams do
         end
       end
 
-      context 'non-admin with global :manage_user permission' do
-        let(:user) { create(:user, global_permission: :manage_user) }
+      context 'for a non-admin with global :create_user permission' do
+        let(:user) { create(:user, global_permission: :create_user) }
         let(:hash) { all_permissions.zip(all_permissions).to_h }
 
         it 'permits default permissions and "login"' do
@@ -537,7 +537,7 @@ describe PermittedParams do
         end
       end
 
-      context 'admin' do
+      context 'for an admin' do
         let(:user) { admin }
 
         all_permissions.each do |field|
@@ -560,10 +560,10 @@ describe PermittedParams do
         end
 
         context 'with external authentication' do
-          let(:hash) { { 'auth_source_id' => 'true' } }
+          let(:hash) { { 'ldap_auth_source_id' => 'true' } }
           let(:external_authentication) { true }
 
-          it 'does not permit auth_source_id' do
+          it 'does not permit ldap_auth_source_id' do
             expect(subject).to eq({})
           end
         end
@@ -734,7 +734,7 @@ describe PermittedParams do
       it_behaves_like 'allows params'
     end
 
-    describe 'with password login disabld' do
+    describe 'with password login disabled' do
       include_context 'prepare params comparison'
 
       before do
@@ -765,11 +765,11 @@ describe PermittedParams do
       it { expect(subject).to eq(permitted_hash) }
     end
 
-    describe 'with no registration footer configured' do
+    describe 'with writable registration footer' do
       before do
-        allow(OpenProject::Configuration)
-          .to receive(:registration_footer)
-                .and_return({})
+        allow(Setting)
+          .to receive(:registration_footer_writable?)
+                .and_return(true)
       end
 
       let(:hash) do
@@ -783,13 +783,13 @@ describe PermittedParams do
       it_behaves_like 'allows params'
     end
 
-    describe 'with a registration footer configured' do
+    describe 'with a non-writable registration footer (set via env var or config file)' do
       include_context 'prepare params comparison'
 
       before do
-        allow(OpenProject::Configuration)
-          .to receive(:registration_footer)
-                .and_return("en" => "configured footer")
+        allow(Setting)
+          .to receive(:registration_footer_writable?)
+                .and_return(false)
       end
 
       let(:hash) do
@@ -800,11 +800,11 @@ describe PermittedParams do
         }
       end
 
-      let(:permitted_hash) do
+      let(:expected_permitted_hash) do
         {}
       end
 
-      it { expect(subject).to eq(permitted_hash) }
+      it { expect(subject).to eq(expected_permitted_hash) }
     end
   end
 
@@ -862,34 +862,28 @@ describe PermittedParams do
   end
 
   describe '#wiki_page' do
-    let(:hash_key) { :content }
-    let(:nested_key) { :page }
+    let(:hash_key) { :page }
     let (:attribute) { :wiki_page }
 
     describe 'title' do
       let(:hash) { { 'title' => 'blubs' } }
 
-      it_behaves_like 'allows nested params'
+      it_behaves_like 'allows params'
     end
 
     describe 'parent_id' do
       let(:hash) { { 'parent_id' => '1' } }
 
-      it_behaves_like 'allows nested params'
+      it_behaves_like 'allows params'
     end
 
     describe 'redirect_existing_links' do
       let(:hash) { { 'redirect_existing_links' => '1' } }
 
-      it_behaves_like 'allows nested params'
+      it_behaves_like 'allows params'
     end
-  end
 
-  describe '#wiki_content' do
-    let (:hash_key) { :content }
-    let (:attribute) { :wiki_content }
-
-    describe 'title' do
+    describe 'journal_notes' do
       let(:hash) { { 'journal_notes' => 'blubs' } }
 
       it_behaves_like 'allows params'
@@ -924,7 +918,7 @@ describe PermittedParams do
     end
 
     describe 'project_id' do
-      let(:hash) { { 'user_id' => 'blubs' } }
+      let(:hash) { { 'project_id' => 'blubs' } }
 
       it_behaves_like 'forbids params'
     end

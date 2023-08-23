@@ -28,16 +28,16 @@
 
 require 'spec_helper'
 
-describe FrontendAssetHelper do
+RSpec.describe FrontendAssetHelper do
   describe '#include_frontend_assets' do
-    context 'when in development or test' do
+    context 'when in development or test',
+            with_env: { 'OPENPROJECT_DISABLE_DEV_ASSET_PROXY' => '' } do
       before do
         allow(Rails.env).to receive(:production?).and_return(false)
-        stub_const('ENV', 'OPENPROJECT_DISABLE_DEV_ASSET_PROXY' => '')
       end
 
       it 'returns the proxied frontend server' do
-        expect(helper.include_frontend_assets).to include('script src="http://localhost:4200/assets/frontend/main.js"')
+        expect(helper.include_frontend_assets).to match(%r{script src="http://localhost:4200/assets/frontend/main(.*).js"})
       end
     end
 
@@ -47,7 +47,7 @@ describe FrontendAssetHelper do
       end
 
       it 'returns the path to the asset' do
-        expect(helper.include_frontend_assets).to include('script src="/assets/frontend/main.js"')
+        expect(helper.include_frontend_assets).to match(%r{script src="/assets/frontend/main(.*).js"})
       end
 
       context 'when using relative_url_root' do
@@ -56,7 +56,7 @@ describe FrontendAssetHelper do
         end
 
         it 'prepends it to the asset path' do
-          expect(helper.include_frontend_assets).to include('script src="/openproject/assets/frontend/main.js"')
+          expect(helper.include_frontend_assets).to match(%r{script src="/openproject/assets/frontend/main(.*).js"})
         end
       end
 
@@ -66,7 +66,7 @@ describe FrontendAssetHelper do
         end
 
         it 'prepends it to the asset path only once (bug #41428)' do
-          expect(helper.include_frontend_assets).to include('script src="/openproject/assets/frontend/main.js"')
+          expect(helper.include_frontend_assets).to match(%r{script src="/openproject/assets/frontend/main(.*).js"})
         end
       end
     end

@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg work package button spec',
-         js: true do
+RSpec.describe 'Wysiwyg work package button spec',
+               js: true do
   shared_let(:admin) { create(:admin) }
   let(:user) { admin }
 
@@ -86,7 +86,7 @@ describe 'Wysiwyg work package button spec',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         within('#content') do
           expect(page).to have_selector("a[href=\"/projects/my-project/work_packages/new?type=#{type.id}\"]")

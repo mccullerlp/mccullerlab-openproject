@@ -28,7 +28,8 @@
 
 require 'spec_helper'
 
-describe Query::Timestamps do
+RSpec.describe Query::Timestamps,
+               with_ee: %i[baseline_comparison] do
   describe "#timestamps" do
     subject { query.timestamps }
 
@@ -93,8 +94,8 @@ describe Query::Timestamps do
         end
 
         it "remembers the timestamp values" do
-          expect(subject.first.iso8601).to eq "P-50Y"
-          expect(subject.last.iso8601).to eq "2022-10-29T23:01:23Z"
+          expect(subject.first).to eq "P-50Y"
+          expect(subject.last).to eq "2022-10-29T23:01:23Z"
         end
       end
     end

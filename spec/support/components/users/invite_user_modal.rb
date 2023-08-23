@@ -89,17 +89,18 @@ module Components
       end
 
       def open_select_in_step(selector, query = '')
-        search_autocomplete modal_element.find(selector),
+        select_field = modal_element.find(selector)
+
+        search_autocomplete select_field,
                             query:,
                             results_selector: 'body'
       end
 
       def principal_step(next_step: true)
-        # Without it, the "Invite/Create new option is sometimes not displayed"
-        sleep(0.1)
-
         if invite_user?
-          autocomplete "op-ium-principal-search", principal_name, select_text: "Invite: #{principal_name}"
+          retry_block do
+            autocomplete "op-ium-principal-search", principal_name, select_text: "Invite: #{principal_name}"
+          end
         else
           autocomplete 'op-ium-principal-search', principal_name
         end
@@ -129,7 +130,9 @@ module Components
       end
 
       def autocomplete(selector, query, select_text: query)
-        select_autocomplete modal_element.find(selector),
+        select_field = modal_element.find(selector, wait: 5)
+
+        select_autocomplete select_field,
                             query:,
                             select_text:,
                             results_selector: 'body'
@@ -143,6 +146,7 @@ module Components
 
       def click_next
         click_modal_button 'Next'
+        wait_for_reload
       end
 
       def invitation_message(text)

@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg embedded work package tables',
-         js: true do
+RSpec.describe 'Wysiwyg embedded work package tables',
+               js: true do
   shared_let(:admin) { create(:admin) }
   let(:user) { admin }
   let(:type_task) { create(:type_task) }
@@ -105,7 +105,7 @@ describe 'Wysiwyg embedded work package tables',
         # Save wiki page
         click_on 'Save'
 
-        expect(page).to have_selector('.flash.notice')
+        expect(page).to have_selector('.op-toast.-success')
 
         embedded_table = Pages::EmbeddedWorkPackagesTable.new find('.wiki-content')
         embedded_table.expect_work_package_listed wp_task

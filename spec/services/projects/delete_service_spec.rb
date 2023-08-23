@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe Projects::DeleteService, type: :model do
+RSpec.describe Projects::DeleteService, type: :model do
   shared_let(:user) { create(:admin) }
   let(:project) { create(:project) }
 
@@ -46,6 +46,21 @@ describe Projects::DeleteService, type: :model do
         expect(project).not_to have_received(:archive)
         expect(Projects::DeleteProjectJob)
           .not_to have_received(:new)
+      end
+
+      context 'when the file storages are involved', webmock: true do
+        it 'removes any remote storages defined for the project' do
+          storage = create(:nextcloud_storage)
+          project_storage = create(:project_storage, project:, storage:)
+          work_package = create(:work_package, project:)
+          create(:file_link, container: work_package, storage:)
+          delete_folder_url =
+            "#{storage.host}/remote.php/dav/files/#{storage.username}/#{project_storage.project_folder_path.chop}"
+
+          stub_request(:delete, delete_folder_url).to_return(status: 204, body: nil, headers: {})
+
+          expect { subject }.to change(Storages::ProjectStorage, :count).by(-1)
+        end
       end
 
       it 'sends a success mail' do
@@ -107,10 +122,10 @@ describe Projects::DeleteService, type: :model do
     let(:user) { build_stubbed(:user) }
 
     it 'returns an error' do
-      expect(Projects::DeleteProjectJob)
-        .not_to receive(:new)
+      allow(Projects::DeleteProjectJob).to receive(:new)
 
       expect(subject).to be_failure
+      expect(Projects::DeleteProjectJob).not_to have_received(:new)
     end
   end
 end

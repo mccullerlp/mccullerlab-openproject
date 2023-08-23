@@ -90,6 +90,15 @@ FactoryBot.define do
       end
     end
 
+    trait :with_status do
+      status_code { Project.status_codes.keys.sample }
+      status_explanation { 'some explanation' }
+    end
+
+    trait :archived do
+      active { false }
+    end
+
     trait :updated_a_long_time_ago do
       created_at { 2.years.ago }
       updated_at { 2.years.ago }

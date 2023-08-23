@@ -29,7 +29,7 @@
 require 'spec_helper'
 require_relative '../support/pages/calendar'
 
-shared_context 'with calendar full access' do
+RSpec.shared_context 'with calendar full access' do
   shared_let(:project) do
     create(:project, enabled_module_names: %w[work_package_tracking calendar_view])
   end
@@ -39,7 +39,8 @@ shared_context 'with calendar full access' do
            member_in_project: project,
            member_with_permissions: %w[
              view_work_packages edit_work_packages add_work_packages
-             view_calendar
+             manage_calendars view_calendar
+             manage_public_queries
            ])
   end
 

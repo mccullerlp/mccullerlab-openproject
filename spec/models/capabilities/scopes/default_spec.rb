@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe Capabilities::Scopes::Default do
+RSpec.describe Capabilities::Scopes::Default do
   # we focus on the non current user capabilities to make the tests easier to understand
   subject(:scope) { Capability.default.where(principal_id: user.id) }
 
@@ -146,9 +146,10 @@ describe Capabilities::Scopes::Default do
 
       include_examples 'consists of contract actions', with: 'the actions of the global permission' do
         let(:expected) do
-          [['users/create', user.id, nil],
-           ['users/read', user.id, nil],
-           ['users/update', user.id, nil]]
+          [
+            ['users/read', user.id, nil],
+            ['users/update', user.id, nil]
+          ]
         end
       end
 
@@ -332,6 +333,7 @@ describe Capabilities::Scopes::Default do
               .map { |_, v| v[:actions].map { |vk, vv| vv.map { |vvv| item.call(vk, vvv, v[:global], v[:module_name]) } } }
               .flatten(2)
               .compact
+              .uniq { |v| v.join(",") }
           end
 
           it 'does not include actions of permissions non-grantable to admin' do
@@ -367,6 +369,7 @@ describe Capabilities::Scopes::Default do
               .map { |_, v| v[:actions].map { |vk, vv| vv.map { |vvv| item.call(vk, vvv, v[:global], v[:module_name]) } } }
               .flatten(2)
               .compact
+              .uniq { |v| v.join(",") }
           end
         end
       end
@@ -414,7 +417,6 @@ describe Capabilities::Scopes::Default do
             ['memberships/create', user.id, project.id],
             ['memberships/destroy', user.id, project.id],
             ['memberships/update', user.id, project.id],
-            ['users/create', user.id, nil],
             ['users/read', user.id, nil],
             ['users/update', user.id, nil]
           ]

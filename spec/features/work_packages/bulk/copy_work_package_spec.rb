@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'features/page_objects/notification'
 require 'support/components/autocompleter/ng_select_autocomplete_helpers'
 
-describe 'Copy work packages through Rails view', js: true do
+RSpec.describe 'Copy work packages through Rails view', js: true do
   include Components::Autocompleter::NgSelectAutocompleteHelpers
 
   shared_let(:type) { create(:type, name: 'Bug') }
@@ -165,31 +165,31 @@ describe 'Copy work packages through Rails view', js: true do
 
           expect(page)
             .to have_selector(
-              '.flash.error',
+              '.op-toast.-error',
               text: I18n.t('work_packages.bulk.none_could_be_saved', total: 3)
             )
 
           expect(page)
             .to have_selector(
-              '.flash.error',
+              '.op-toast.-error',
               text: I18n.t('work_packages.bulk.selected_because_descendants', total: 3, selected: 2)
             )
 
           expect(page)
             .to have_selector(
-              '.flash.error',
+              '.op-toast.-error',
               text: "#{work_package.id}: Type #{I18n.t('activerecord.errors.messages.inclusion')}"
             )
 
           expect(page)
             .to have_selector(
-              '.flash.error',
+              '.op-toast.-error',
               text: "#{work_package2.id}: Type #{I18n.t('activerecord.errors.messages.inclusion')}"
             )
 
           expect(page)
             .to have_selector(
-              '.flash.error',
+              '.op-toast.-error',
               text: "#{child.id} (descendant of selected): Type #{I18n.t('activerecord.errors.messages.inclusion')}"
             )
         end
@@ -230,6 +230,24 @@ describe 'Copy work packages through Rails view', js: true do
         context_menu.open_for work_package
         context_menu.expect_no_options 'Bulk copy'
       end
+    end
+  end
+
+  describe 'copying work package to clipboard' do
+    let(:current_user) { dev }
+    let(:wp_table_target) { Pages::WorkPackagesTable.new(project2) }
+
+    before do
+      wp_table.expect_work_package_count 2
+      context_menu.open_for work_package
+      context_menu.choose 'Copy link to clipboard'
+    end
+
+    it 'successfully copies the short url of the work package' do
+      # We cannot access the navigator.clipboard from a headless browser.
+      # This test makes sure the copy to clipboard logic is working,
+      # regardless of the browser permissions.
+      expect(page).to have_content("/wp/#{work_package.id}")
     end
   end
 
@@ -288,7 +306,7 @@ describe 'Copy work packages through Rails view', js: true do
       click_on 'Copy and follow'
 
       expect(page)
-        .to have_selector('.flash.notice',
+        .to have_selector('.op-toast.-success',
                           text: I18n.t(:notice_successful_create))
 
       wp_page = Pages::FullWorkPackage.new(WorkPackage.last)

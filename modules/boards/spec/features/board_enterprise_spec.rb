@@ -27,10 +27,10 @@
 #++
 
 require 'spec_helper'
-require_relative './support/board_index_page'
-require_relative './support/board_page'
+require_relative 'support/board_index_page'
+require_relative 'support/board_page'
 
-describe 'Boards enterprise spec', js: true do
+RSpec.describe 'Boards enterprise spec', :js, :with_cuprite do
   shared_let(:admin) { create(:admin) }
 
   shared_let(:project) { create(:project, enabled_module_names: %i[work_package_tracking board_view]) }
@@ -56,8 +56,8 @@ describe 'Boards enterprise spec', js: true do
     it 'disabled all action boards' do
       page.find('.toolbar-item a', text: 'Board').click
 
-      expect(page).to have_selector('[data-qa-selector="op-tile-block"]:not([disabled])', text: 'Basic')
-      expect(page).to have_selector('[data-qa-selector="op-tile-block"]:disabled', count: 5)
+      expect(page).to have_selector('[data-qa-selector="op-tile-block"]:not(.-disabled)', text: 'Basic')
+      expect(page).to have_selector('[data-qa-selector="op-tile-block"].-disabled', count: 5)
     end
 
     it 'shows a banner on the action board' do
@@ -76,9 +76,8 @@ describe 'Boards enterprise spec', js: true do
     end
   end
 
-  context 'when EE active' do
+  context 'when EE active', with_ee: %i[board_view] do
     before do
-      with_enterprise_token :board_view
       login_as(admin)
       board_index.visit!
     end
@@ -86,7 +85,7 @@ describe 'Boards enterprise spec', js: true do
     it 'enables all options' do
       page.find('.toolbar-item a', text: 'Board').click
 
-      expect(page).to have_selector('[data-qa-selector="op-tile-block"]:not([disabled])', count: 6)
+      expect(page).to have_selector('[data-qa-selector="op-tile-block"]:not(.-disabled)', count: 6)
     end
 
     it 'shows the action board' do

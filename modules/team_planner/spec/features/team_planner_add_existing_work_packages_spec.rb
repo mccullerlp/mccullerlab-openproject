@@ -30,7 +30,7 @@ require 'spec_helper'
 require_relative './shared_context'
 require_relative '../support/components/add_existing_pane'
 
-describe 'Team planner add existing work packages', js: true do
+RSpec.describe 'Team planner add existing work packages', js: true do
   include_context 'with team planner full access'
 
   let(:closed_status) { create(:status, is_closed: true) }
@@ -72,9 +72,8 @@ describe 'Team planner add existing work packages', js: true do
   let(:add_existing_pane) { Components::AddExistingPane.new }
   let(:filters) { Components::WorkPackages::Filters.new }
 
-  context 'with full permissions' do
+  context 'with full permissions', with_ee: %i[team_planner_view] do
     before do
-      with_enterprise_token(:team_planner_view)
       team_planner.visit!
 
       team_planner.add_assignee user
@@ -159,7 +158,7 @@ describe 'Team planner add existing work packages', js: true do
       sleep 2
 
       # Drag it to the team planner...
-      add_existing_pane.drag_wp_by_pixel third_wp, 800, -50
+      add_existing_pane.drag_wp_by_pixel third_wp, 800, 100
 
       team_planner.expect_and_dismiss_toaster(message: "Successful update.")
 

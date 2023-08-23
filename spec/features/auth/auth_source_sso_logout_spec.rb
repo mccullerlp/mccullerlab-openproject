@@ -32,8 +32,8 @@ Capybara.register_driver :auth_source_sso do |app|
   Capybara::RackTest::Driver.new(app, headers: { 'HTTP_X_REMOTE_USER' => 'bob' })
 end
 
-describe 'Login with auth source SSO',
-         driver: :auth_source_sso do
+RSpec.describe 'Login with auth source SSO',
+               driver: :auth_source_sso do
   before do
     allow(OpenProject::Configuration)
       .to receive(:auth_source_sso)
@@ -47,8 +47,8 @@ describe 'Login with auth source SSO',
     }
   end
 
-  let(:auth_source) { create(:auth_source) }
-  let!(:user) { create(:user, login: 'bob', auth_source:) }
+  let(:ldap_auth_source) { create(:ldap_auth_source) }
+  let!(:user) { create(:user, login: 'bob', ldap_auth_source:) }
 
   it 'can log out after multiple visits' do
     visit home_path

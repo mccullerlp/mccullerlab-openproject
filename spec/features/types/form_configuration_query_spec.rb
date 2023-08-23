@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'form query configuration', js: true do
+RSpec.describe 'form query configuration', js: true, with_cuprite: true do
   shared_let(:admin) { create(:admin) }
   let(:type_bug) { create(:type_bug) }
   let(:type_task) { create(:type_task) }
@@ -84,9 +84,8 @@ describe 'form query configuration', js: true do
   let(:filters) { Components::WorkPackages::TableConfiguration::Filters.new }
   let(:columns) { Components::WorkPackages::Columns.new }
 
-  describe "with EE token" do
+  describe "with EE token", with_ee: %i[edit_attribute_groups] do
     before do
-      with_enterprise_token(:edit_attribute_groups)
       login_as(admin)
       visit edit_type_tab_path(id: type_bug.id, tab: "form_configuration")
     end
@@ -94,7 +93,7 @@ describe 'form query configuration', js: true do
     it 'can save an empty query group' do
       form.add_query_group('Empty test', :children)
       form.save_changes
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
       type_bug.reload
 
       query_group = type_bug.attribute_groups.detect { |x| x.is_a?(Type::QueryGroup) }
@@ -106,7 +105,7 @@ describe 'form query configuration', js: true do
       form.add_query_group('Subtasks', :children)
       # Save changed query
       form.save_changes
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
       # Visit wp_table
       wp_table.visit!
@@ -125,14 +124,14 @@ describe 'form query configuration', js: true do
       end
     end
 
-    context 'visiting a new work package screen' do
+    context 'when visiting a new work package screen' do
       let(:wp_page) { Pages::FullWorkPackageCreate.new }
 
       it 'does not show a subgroup (Regression #29582)' do
         form.add_query_group('Subtasks', :children)
         # Save changed query
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
         # Visit new wp page
         visit new_project_work_packages_path(project)
@@ -157,7 +156,7 @@ describe 'form query configuration', js: true do
         filters.save
 
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
         archived.update_attribute(:active, false)
 
@@ -185,7 +184,7 @@ describe 'form query configuration', js: true do
 
       # Save changed query
       form.save_changes
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
       type_bug.reload
       query = type_bug.attribute_groups.detect { |x| x.key == 'Columns Test' }
@@ -207,7 +206,7 @@ describe 'form query configuration', js: true do
 
       # Save changed query
       form.save_changes
-      expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+      expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
       type_bug.reload
       query = type_bug.attribute_groups.detect { |x| x.key == 'Columns Test' }
@@ -237,7 +236,7 @@ describe 'form query configuration', js: true do
     end
 
     shared_examples_for 'query group' do
-      it '' do
+      it do
         form.add_query_group('Subtasks', frontend_relation_type)
         form.edit_query_group('Subtasks')
 
@@ -254,7 +253,7 @@ describe 'form query configuration', js: true do
         filters.save
 
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
         # Visit work package with that type
         wp_page.visit!
@@ -271,7 +270,8 @@ describe 'form query configuration', js: true do
         autocompleter = embedded_table.click_reference_inline_create
         results = embedded_table.search_autocomplete autocompleter,
                                                      query: 'Unrelated',
-                                                     results_selector: '.ng-dropdown-panel-items'
+                                                     results_selector: '.ng-dropdown-panel-items',
+                                                     wait_for_fetched_options: false
 
         expect(results).to have_text "Unrelated task"
         expect(results).not_to have_text "Bug ##{unrelated_task.id} Unrelated bug"

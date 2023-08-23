@@ -26,9 +26,9 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-require File.expand_path(File.dirname(__FILE__) + '/../spec_helper')
+require 'spec_helper'
 
-describe Sprint do
+RSpec.describe Sprint do
   let(:sprint) { build(:sprint) }
   let(:project) { build(:project) }
 

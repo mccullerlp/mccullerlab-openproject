@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'features/page_objects/notification'
 
-describe 'Upload attachment to work package', js: true do
+RSpec.describe 'Upload attachment to work package', js: true, with_cuprite: true do
   let(:role) do
     create(:role,
            permissions: %i[view_work_packages add_work_packages edit_work_packages add_work_package_notes])
@@ -113,7 +113,7 @@ describe 'Upload attachment to work package', js: true do
       end
       let!(:table) { Pages::WorkPackagesTable.new project }
 
-      it 'can add two work packages in a row when uploading (Regression #42933)' do
+      it 'can add two work packages in a row when uploading (Regression #42933)' do |example|
         table.visit!
         new_page = table.create_wp_by_button type
         subject = new_page.edit_field :subject
@@ -122,15 +122,15 @@ describe 'Upload attachment to work package', js: true do
         target = find('.ck-content')
         attachments.drag_and_drop_file(target, image_fixture.path)
 
-        sleep 2
-        expect(page).not_to have_selector('op-toasters-upload-progress')
+        sleep 2 unless example.metadata[:with_cuprite]
+        editor.wait_until_upload_progress_toaster_cleared
 
         editor.in_editor do |_container, editable|
           expect(editable).to have_selector('img[src*="/api/v3/attachments/"]', wait: 20)
           expect(editable).not_to have_selector('.ck-upload-placeholder-loader')
         end
 
-        sleep 2
+        sleep 2 unless example.metadata[:with_cuprite]
 
         scroll_to_and_click find_by_id('work-packages--edit-actions-save')
 
@@ -183,22 +183,22 @@ describe 'Upload attachment to work package', js: true do
           visit new_project_work_packages_path(project.identifier, type: type.id)
         end
 
-        it 'can upload an image via drag & drop (Regression #28189)' do
+        it 'can upload an image via drag & drop (Regression #28189)' do |example|
           subject = new_page.edit_field :subject
           subject.set_value 'My subject'
 
           target = find('.ck-content')
           attachments.drag_and_drop_file(target, image_fixture.path)
 
-          sleep 2
-          expect(page).not_to have_selector('op-toasters-upload-progress')
+          sleep 2 unless example.metadata[:with_cuprite]
+          editor.wait_until_upload_progress_toaster_cleared
 
           editor.in_editor do |_container, editable|
             expect(editable).to have_selector('img[src*="/api/v3/attachments/"]', wait: 20)
             expect(editable).not_to have_selector('.ck-upload-placeholder-loader')
           end
 
-          sleep 2
+          sleep 2 unless example.metadata[:with_cuprite]
 
           scroll_to_and_click find_by_id('work-packages--edit-actions-save')
 
@@ -224,7 +224,9 @@ describe 'Upload attachment to work package', js: true do
       # Technically one could test this not only for new work packages, but also for existing
       # ones, and for new and existing other attachable resources. But the code is the same
       # everywhere so if this works it should work everywhere else too.
-      context 'with direct uploads', with_direct_uploads: true do
+      # TODO: Add better_cuprite_billy. I'm not sure what needs to be set up so the request to AWS passes.
+      # Need help
+      context 'with direct uploads', with_cuprite: false, with_direct_uploads: true do
         before do
           allow_any_instance_of(Attachment).to receive(:diskfile).and_return Struct.new(:path).new(image_fixture.path.to_s)
         end
@@ -253,7 +255,7 @@ describe 'Upload attachment to work package', js: true do
                                      page.find('[data-qa-tab-id="files"]')
 
       expect(page).to have_selector('[data-qa-selector="op-files-tab--file-list-item-title"]', text: 'image.png', wait: 10)
-      expect(page).not_to have_selector('op-toasters-upload-progress')
+      editor.wait_until_upload_progress_toaster_cleared
       wp_page.expect_tab 'Files'
     end
 
@@ -276,13 +278,13 @@ describe 'Upload attachment to work package', js: true do
       # Attach file manually
       expect(page).not_to have_selector('[data-qa-selector="op-files-tab--file-list-item-title"]')
       attachments.attach_file_on_input(image_fixture.path)
-      expect(page).not_to have_selector('op-toasters-upload-progress')
+      editor.wait_until_upload_progress_toaster_cleared
       expect(page).to have_selector('[data-qa-selector="op-files-tab--file-list-item-title"]', text: 'image.png', wait: 5)
 
       ##
       # and via drag & drop
       attachments.drag_and_drop_file(container, image_fixture.path)
-      expect(page).not_to have_selector('op-toasters-upload-progress')
+      editor.wait_until_upload_progress_toaster_cleared
       expect(page)
         .to have_selector('[data-qa-selector="op-files-tab--file-list-item-title"]', text: 'image.png', count: 2, wait: 5)
     end

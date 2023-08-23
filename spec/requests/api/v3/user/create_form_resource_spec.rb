@@ -28,7 +28,7 @@
 require 'spec_helper'
 require 'rack/test'
 
-describe API::V3::Users::CreateFormAPI, content_type: :json do
+RSpec.describe API::V3::Users::CreateFormAPI, content_type: :json do
   include Rack::Test::Methods
   include API::V3::Utilities::PathHelper
 
@@ -44,7 +44,7 @@ describe API::V3::Users::CreateFormAPI, content_type: :json do
   subject(:response) { last_response }
 
   context 'with authorized user' do
-    shared_let(:current_user) { create(:user, global_permission: :manage_user) }
+    shared_let(:current_user) { create(:user, global_permission: :create_user) }
 
     describe 'empty params' do
       let(:payload) do

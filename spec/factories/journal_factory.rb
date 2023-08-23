@@ -29,8 +29,21 @@
 FactoryBot.define do
   factory :journal do
     user factory: :user
-    created_at { Time.now }
+    created_at { Time.zone.now }
+    updated_at { created_at }
+    validity_period { created_at..Float::INFINITY }
     sequence(:version, 1)
+
+    callback(:before_create) do |journal|
+      # If there is a predecessor to the newly created journal, update the validity period of the predecessor
+      # to end at the creation time of the new journal.
+      Journal
+        .where(journable_id: journal.journable_id,
+               journable_type: journal.journable_type,
+               version: journal.version - 1)
+        .where('upper(validity_period) IS NULL')
+        .update_all(['validity_period = tstzrange(journals.created_at, ?)', journal.created_at])
+    end
 
     factory :work_package_journal, class: 'Journal' do
       journable_type { 'WorkPackage' }
@@ -41,9 +54,13 @@ FactoryBot.define do
       end
     end
 
-    factory :wiki_content_journal, class: 'Journal' do
-      journable_type { 'WikiContent' }
-      data { build(:journal_wiki_content_journal) }
+    factory :wiki_page_journal, class: 'Journal' do
+      journable_type { 'WikiPage' }
+      data { build(:journal_wiki_page_journal) }
+
+      callback(:after_stub) do |journal, options|
+        journal.journable ||= options.journable || build_stubbed(:wiki_page)
+      end
     end
 
     factory :message_journal, class: 'Journal' do
@@ -59,6 +76,11 @@ FactoryBot.define do
     factory :project_journal, class: 'Journal' do
       journable factory: :project
       data { build(:journal_project_journal) }
+    end
+
+    factory :time_entry_journal, class: 'Journal' do
+      journable_type { 'TimeEntry' }
+      data { association(:journal_time_entry_journal) }
     end
   end
 end

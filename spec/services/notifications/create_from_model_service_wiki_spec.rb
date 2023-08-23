@@ -28,7 +28,7 @@
 require 'spec_helper'
 require_relative './create_from_journal_job_shared'
 
-describe Notifications::CreateFromModelService, 'wiki', with_settings: { journal_aggregation_time_minutes: 0 } do
+RSpec.describe Notifications::CreateFromModelService, 'wiki', with_settings: { journal_aggregation_time_minutes: 0 } do
   subject(:call) do
     described_class.new(journal).call(send_notifications)
   end
@@ -44,10 +44,9 @@ describe Notifications::CreateFromModelService, 'wiki', with_settings: { journal
   let(:wiki_page) do
     create(:wiki_page,
            wiki:,
-           content: build(:wiki_content,
-                          author: other_user))
+           author: other_user)
   end
-  let(:resource) { wiki_page.content }
+  let(:resource) { wiki_page }
   let(:journal) { resource.journals.last }
   let(:author) { other_user }
 

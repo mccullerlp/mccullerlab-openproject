@@ -28,8 +28,8 @@
 
 require 'spec_helper'
 
-describe 'Wysiwyg escaping HTML entities (Regression #28906)',
-         js: true do
+RSpec.describe 'Wysiwyg escaping HTML entities (Regression #28906)',
+               js: true do
   let(:user) { create(:admin) }
   let(:project) { create(:project, enabled_module_names: %w[wiki]) }
   let(:editor) { Components::WysiwygEditor.new }
@@ -52,7 +52,7 @@ describe 'Wysiwyg escaping HTML entities (Regression #28906)',
     # Save wiki page
     click_on 'Save'
 
-    expect(page).to have_selector('.flash.notice')
+    expect(page).to have_selector('.op-toast.-success')
 
     within('#content') do
       expect(page).to have_selector('p', text: '<node foo="bar" />')
@@ -60,7 +60,7 @@ describe 'Wysiwyg escaping HTML entities (Regression #28906)',
       expect(page).not_to have_selector('node')
     end
 
-    text = WikiContent.last.text
+    text = WikiPage.last.text
     expect(text).to include "&lt;node foo=&quot;bar&quot; /&gt;"
     expect(text).to include "\\\\&lt;u&gt;foo\\\\&lt;/u&gt;"
     expect(text).not_to include '<node>'

@@ -1,6 +1,6 @@
 require 'spec_helper'
 
-describe 'Switching types in work package table', js: true do
+RSpec.describe 'Switching types in work package table', js: true do
   let(:user) { create(:admin) }
 
   describe 'switching to required CF' do
@@ -48,6 +48,7 @@ describe 'Switching types in work package table', js: true do
       query
     end
 
+    # Using let to memoize the fields sometimes leads to invalid node reference errors in chrome 113.
     def type_field
       wp_table.edit_field(work_package, :type)
     end

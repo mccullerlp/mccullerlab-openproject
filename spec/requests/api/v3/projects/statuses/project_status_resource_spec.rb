@@ -29,7 +29,7 @@
 require 'spec_helper'
 require 'rack/test'
 
-describe 'API v3 Project status resource', content_type: :json do
+RSpec.describe 'API v3 Project status resource', content_type: :json do
   include Rack::Test::Methods
   include API::V3::Utilities::PathHelper
 
@@ -42,7 +42,7 @@ describe 'API v3 Project status resource', content_type: :json do
       last_response
     end
 
-    let(:status) { Projects::Status.codes.keys.last }
+    let(:status) { Project.status_codes.keys.last }
     let(:get_path) { api_v3_paths.project_status status }
 
     context 'logged in user' do

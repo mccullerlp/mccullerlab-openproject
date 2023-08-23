@@ -26,9 +26,9 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-shared_examples_for 'collection' do |name|
+RSpec.shared_examples_for 'collection' do |name|
   it "has the #{name} property" do
-    represented_elements = value.map { |v| element_decorator.new(v, current_user: user) }
+    represented_elements = value.map { |v| element_decorator.call(v) }
 
     expect(subject)
       .to be_json_eql(represented_elements.to_json)

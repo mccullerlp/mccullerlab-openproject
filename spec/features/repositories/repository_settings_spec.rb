@@ -30,7 +30,7 @@ require 'spec_helper'
 require 'features/repositories/repository_settings_page'
 require 'features/support/components/danger_zone'
 
-describe 'Repository Settings', js: true do
+RSpec.describe 'Repository Settings', js: true do
   let(:current_user) { create (:admin) }
   let(:project) { create(:project) }
   let(:settings_page) { RepositorySettingsPage.new(project) }
@@ -193,7 +193,7 @@ describe 'Repository Settings', js: true do
 
       click_button(I18n.t(:button_save))
       expect(page).to have_selector('[name="repository[login]"][value="foobar"]')
-      expect(page).to have_selector('.flash',
+      expect(page).to have_selector('.op-toast',
                                     text: I18n.t('repositories.update_settings_successful'))
     end
   end

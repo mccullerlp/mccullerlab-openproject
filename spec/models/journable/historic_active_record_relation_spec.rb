@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe Journable::HistoricActiveRecordRelation do
+RSpec.describe Journable::HistoricActiveRecordRelation do
   # See: https://github.com/opf/openproject/pull/11243
 
   let(:before_monday) { "2022-01-01".to_datetime }
@@ -37,48 +37,32 @@ describe Journable::HistoricActiveRecordRelation do
   let(:wednesday) { "2022-08-03".to_datetime }
   let(:thursday) { "2022-08-04".to_datetime }
   let(:friday) { "2022-08-05".to_datetime }
-
+  let(:work_package_attributes) { {} }
   let(:project) { create(:project) }
   let!(:work_package) do
-    new_work_package = create(:work_package, description: "The work package as it is since Friday", estimated_hours: 10, project:)
-    new_work_package.update_columns created_at: monday
-    new_work_package
+    create(:work_package,
+           description: "The work package as it is since Friday",
+           estimated_hours: 10,
+           project:,
+           journals: {
+             monday => { description: "The work package as it has been on Monday", estimated_hours: 5 },
+             wednesday => { description: "The work package as it has been on Wednesday", estimated_hours: 10 },
+             friday => { description: "The work package as it is since Friday", estimated_hours: 10 }
+           })
   end
   let(:journable) { work_package }
-
   let(:monday_journal) do
-    create_journal(journable: work_package, timestamp: monday,
-                   attributes: { description: "The work package as it has been on Monday", estimated_hours: 5 })
+    work_package.journals.find_by(created_at: monday)
   end
   let(:wednesday_journal) do
-    create_journal(journable: work_package, timestamp: wednesday,
-                   attributes: { description: "The work package as it has been on Wednesday", estimated_hours: 10 })
+    work_package.journals.find_by(created_at: wednesday)
   end
   let(:friday_journal) do
-    create_journal(journable: work_package, timestamp: friday,
-                   attributes: { description: "The work package as it is since Friday", estimated_hours: 10 })
+    work_package.journals.find_by(created_at: friday)
   end
 
   let(:relation) { WorkPackage.all }
   let(:historic_relation) { relation.at_timestamp(wednesday) }
-
-  def create_journal(journable:, timestamp:, attributes: {})
-    work_package_attributes = work_package.attributes.except("id")
-    journal_attributes = work_package_attributes \
-        .extract!(*Journal::WorkPackageJournal.attribute_names) \
-        .symbolize_keys.merge(attributes)
-    create(:work_package_journal,
-           journable:, created_at: timestamp, updated_at: timestamp,
-           data: build(:journal_work_package_journal, journal_attributes))
-  end
-
-  before do
-    work_package.journals.destroy_all
-    monday_journal
-    wednesday_journal
-    friday_journal
-    work_package.reload
-  end
 
   subject { historic_relation }
 
@@ -233,6 +217,71 @@ describe Journable::HistoricActiveRecordRelation do
 
         it "returns the requested work package" do
           expect(subject).to include work_package
+        end
+      end
+
+      describe "when searching for custom fields" do
+        let(:custom_field) do
+          create(:text_wp_custom_field,
+                 name: 'Text CF',
+                 types: project.types,
+                 projects: [project])
+        end
+        let!(:monday_cf_journal) do
+          create(:journal_customizable_journal, journal: monday_journal, custom_field:, value: 'Monday_CV')
+        end
+        let!(:wednesday_cf_journal) do
+          create(:journal_customizable_journal, journal: wednesday_journal, custom_field:, value: 'Wednesday_CV')
+        end
+        let!(:friday_cf_journal) do
+          create(:journal_customizable_journal, journal: friday_journal, custom_field:, value: 'Friday_CV')
+        end
+        let(:work_package_attributes) { { custom_values: { custom_field.id => 'Friday_CV' } } }
+        let(:filter) do
+          Queries::WorkPackages::Filter::CustomFieldFilter.create!(
+            name: custom_field.column_name,
+            context: build_stubbed(:query, project:),
+            operator: '~',
+            values:
+          )
+        end
+        let(:relation) { WorkPackage.where(filter.where) }
+
+        context 'with the current value at the current time' do
+          let(:values) { %w(Friday_CV) }
+          let(:historic_relation) { relation.at_timestamp(Timestamp.new("PT0S")) }
+
+          it "returns the requested work package" do
+            expect(subject).to include work_package
+          end
+        end
+
+        context 'with the matching historic value' do
+          let(:values) { %w(Wednesday_CV) }
+
+          it "transforms the expression to join the customizable_journals" do
+            subject.to_sql.squish.tap do |subject_sql|
+              expect(subject_sql)
+                .to include <<~SQL.squish
+                  JOIN customizable_journals ON
+                  customizable_journals.journal_id = journals.id
+                  AND customizable_journals.custom_field_id = #{custom_field.id}
+                SQL
+              expect(subject_sql).to include "customizable_journals.value ILIKE '%Wednesday_CV%'"
+            end
+          end
+
+          it "returns the requested work package" do
+            expect(subject).to include work_package
+          end
+        end
+
+        context 'with a different historic value' do
+          let(:values) { %w(Monday_CV) }
+
+          it "does not return the requested work package" do
+            expect(subject).not_to include work_package
+          end
         end
       end
     end
@@ -443,7 +492,7 @@ describe Journable::HistoricActiveRecordRelation do
       it "joins the projects table" do
         sql = subject.to_sql.tr('"', '')
         expect(sql).to include \
-          "LEFT OUTER JOIN projects ON projects.id = journables.project_id"
+          "LEFT OUTER JOIN projects ON projects.id = work_package_journals.project_id"
         expect(sql).to include \
           "WHERE projects.id = #{project.id}"
       end

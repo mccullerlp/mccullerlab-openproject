@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-shared_examples_for 'wiki page contract' do
+RSpec.shared_examples_for 'wiki page contract' do
   let(:current_user) do
     build_stubbed(:user) do |user|
       allow(user)
@@ -82,14 +82,6 @@ shared_examples_for 'wiki page contract' do
 
       it 'is invalid' do
         expect_valid(false, wiki: :blank)
-      end
-    end
-
-    context 'if the content is nil' do
-      it 'is invalid' do
-        page.content = nil
-
-        expect_valid(false, content: :blank)
       end
     end
 

@@ -32,5 +32,19 @@ FactoryBot.define do
     sequence(:name) { |n| "Storage #{n}" }
     sequence(:host) { |n| "https://host#{n}.example.com" }
     creator factory: :user
+
+    factory :nextcloud_storage, class: '::Storages::NextcloudStorage' do
+      provider_type { Storages::Storage::PROVIDER_TYPE_NEXTCLOUD }
+
+      trait :as_automatically_managed do
+        automatically_managed { true }
+        username { 'OpenProject' }
+        password { 'Password123' }
+      end
+
+      trait :as_not_automatically_managed do
+        automatically_managed { false }
+      end
+    end
   end
 end

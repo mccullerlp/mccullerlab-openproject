@@ -26,14 +26,15 @@
 # See COPYRIGHT and LICENSE files for more details.
 #++
 
-require File.expand_path("#{File.dirname(__FILE__)}/../spec_helper")
+require 'spec_helper'
 
-describe Burndown do
+RSpec.describe Burndown do
   def set_attribute_journalized(story, attribute, value, day)
     story.reload
     story.send(attribute, value)
     story.save!
-    story.last_journal.update(created_at: day, updated_at: day)
+    story.journals[-2].update_columns(validity_period: story.journals[-2].created_at...day) if story.journals.count > 1
+    story.journals[-1].update_columns(created_at: day, updated_at: day, validity_period: day..Float::INFINITY)
   end
 
   let(:user) { create(:user) }
@@ -64,7 +65,6 @@ describe Burndown do
 
     allow(Setting).to receive(:plugin_openproject_backlogs).and_return({ 'points_burn_direction' => 'down',
                                                                          'wiki_template' => '',
-                                                                         'card_spec' => 'Sattleford VM-5040',
                                                                          'story_types' => [type_feature.id.to_s],
                                                                          'task_type' => type_task.id.to_s })
 
@@ -166,7 +166,9 @@ describe Burndown do
                                           priority: issue_priority,
                                           created_at: Time.zone.today - (20 - i).days,
                                           updated_at: Time.zone.today - (20 - i).days)
-              stories[i].last_journal.update_columns(created_at: stories[i].created_at, updated_at: stories[i].created_at)
+              stories[i].last_journal.update_columns(created_at: stories[i].created_at,
+                                                     updated_at: stories[i].created_at,
+                                                     validity_period: stories[i].created_at..Float::INFINITY)
             end
 
             stories

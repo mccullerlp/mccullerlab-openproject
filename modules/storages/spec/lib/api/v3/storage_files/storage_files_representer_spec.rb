@@ -28,46 +28,62 @@
 
 require 'spec_helper'
 
-describe API::V3::StorageFiles::StorageFilesRepresenter do
+RSpec.describe API::V3::StorageFiles::StorageFilesRepresenter do
   let(:user) { build_stubbed(:user) }
+  let(:storage) { build_stubbed(:storage) }
   let(:created_at) { DateTime.now }
   let(:last_modified_at) { DateTime.now }
 
   let(:parent) do
     Storages::StorageFile.new(
-      23,
-      '/',
-      2048,
-      'application/x-op-directory',
-      created_at,
-      last_modified_at,
-      'admin',
-      'admin',
-      '/',
-      %i[readable writeable]
+      id: 23,
+      name: 'Documents',
+      size: 2048,
+      mime_type: 'application/x-op-directory',
+      created_at:,
+      last_modified_at:,
+      created_by_name: 'admin',
+      last_modified_by_name: 'admin',
+      location: '/Documents',
+      permissions: %i[readable writeable]
     )
   end
 
   let(:file) do
     Storages::StorageFile.new(
-      42,
-      'readme.md',
-      4096,
-      'text/plain',
-      created_at,
-      last_modified_at,
-      'admin',
-      'admin',
-      '/readme.md',
-      %i[readable writeable]
+      id: 42,
+      name: 'readme.md',
+      size: 4096,
+      mime_type: 'text/plain',
+      created_at:,
+      last_modified_at:,
+      created_by_name: 'admin',
+      last_modified_by_name: 'admin',
+      location: '/Documents/readme.md',
+      permissions: %i[readable writeable]
+    )
+  end
+
+  let(:ancestor) do
+    Storages::StorageFile.new(
+      id: 47,
+      name: '/',
+      size: 4096,
+      mime_type: 'application/x-op-directory',
+      created_at:,
+      last_modified_at:,
+      created_by_name: 'admin',
+      last_modified_by_name: 'admin',
+      location: '/',
+      permissions: %i[readable writeable]
     )
   end
 
   let(:files) do
-    Storages::StorageFiles.new([file], parent)
+    Storages::StorageFiles.new([file], parent, [ancestor])
   end
 
-  let(:representer) { described_class.new(files, current_user: user) }
+  let(:representer) { described_class.new(files, storage, current_user: user) }
 
   subject { representer.to_json }
 
@@ -78,11 +94,20 @@ describe API::V3::StorageFiles::StorageFilesRepresenter do
 
     it_behaves_like 'collection', :files do
       let(:value) { files.files }
-      let(:element_decorator) { API::V3::StorageFiles::StorageFileRepresenter }
+      let(:element_decorator) do
+        ->(value) { API::V3::StorageFiles::StorageFileRepresenter.new(value, storage, current_user: user) }
+      end
+    end
+
+    it_behaves_like 'collection', :ancestors do
+      let(:value) { files.ancestors }
+      let(:element_decorator) do
+        ->(value) { API::V3::StorageFiles::StorageFileRepresenter.new(value, storage, current_user: user) }
+      end
     end
 
     it_behaves_like 'property', :parent do
-      let(:value) { API::V3::StorageFiles::StorageFileRepresenter.new(files.parent, current_user: user) }
+      let(:value) { API::V3::StorageFiles::StorageFileRepresenter.new(files.parent, storage, current_user: user) }
     end
   end
 end

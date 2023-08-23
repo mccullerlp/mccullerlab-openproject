@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe 'form configuration', js: true do
+RSpec.describe 'form configuration', js: true do
   shared_let(:admin) { create(:admin) }
   let(:type) { create(:type) }
 
@@ -45,11 +45,7 @@ describe 'form configuration', js: true do
   let(:wp_page) { Pages::FullWorkPackage.new(work_package) }
   let(:form) { Components::Admin::TypeConfigurationForm.new }
 
-  describe "with EE token" do
-    before do
-      with_enterprise_token(:edit_attribute_groups)
-    end
-
+  describe "with EE token", with_ee: %i[edit_attribute_groups] do
     describe 'default configuration' do
       let(:dialog) { Components::ConfirmationDialog.new }
 
@@ -95,7 +91,7 @@ describe 'form configuration', js: true do
 
         # Save configuration
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
         form.expect_empty
 
@@ -173,7 +169,7 @@ describe 'form configuration', js: true do
 
         # Save configuration
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
 
         # Expect configuration to be correct now
         form.expect_no_attribute('assignee', 'Cool Stuff')
@@ -270,7 +266,7 @@ describe 'form configuration', js: true do
         form.expect_attribute(key: cf_identifier)
 
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
       end
     end
 
@@ -282,7 +278,7 @@ describe 'form configuration', js: true do
       let(:cf_identifier) { custom_field.attribute_name }
       let(:cf_identifier_api) { cf_identifier.camelcase(:lower) }
 
-      before do
+      def add_cf_to_group
         project
         custom_field
 
@@ -300,11 +296,12 @@ describe 'form configuration', js: true do
         form.expect_attribute(key: cf_identifier)
 
         form.save_changes
-        expect(page).to have_selector('.flash.notice', text: 'Successful update.', wait: 10)
+        expect(page).to have_selector('.op-toast.-success', text: 'Successful update.', wait: 10)
       end
 
       context 'if inactive in project' do
         it 'can be added to the type, but is not shown' do
+          add_cf_to_group
           # Disable in project, should be invisible
           # This step is necessary, since we auto-activate custom fields
           # when adding them to the form configuration
@@ -357,6 +354,8 @@ describe 'form configuration', js: true do
         end
 
         it 'can be added to type and is visible' do
+          add_cf_to_group
+
           # Visit work package with that type
           wp_page.visit!
           wp_page.ensure_page_loaded
@@ -376,11 +375,10 @@ describe 'form configuration', js: true do
     end
   end
 
-  describe "without EE token" do
+  describe "without EE token", with_ee: false do
     let(:dialog) { Components::ConfirmationDialog.new }
 
     it "must disable adding and renaming groups" do
-      with_enterprise_token(nil)
       login_as(admin)
       visit edit_type_tab_path(id: type.id, tab: "form_configuration")
 

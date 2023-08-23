@@ -1,13 +1,13 @@
 require_relative '../../spec_helper'
 require_relative '../shared_2fa_examples'
 
-describe 'Login with enforced 2FA',
-         js: true, with_settings: {
-           plugin_openproject_two_factor_authentication: {
-             'active_strategies' => [:developer],
-             'enforced' => true
-           }
-         } do
+RSpec.describe 'Login with enforced 2FA',
+               js: true, with_settings: {
+                 plugin_openproject_two_factor_authentication: {
+                   'active_strategies' => [:developer],
+                   'enforced' => true
+                 }
+               } do
   let(:user_password) { 'bob!' * 4 }
   let(:user) do
     create(:user,
@@ -37,7 +37,7 @@ describe 'Login with enforced 2FA',
       first_login_step
       two_factor_step('whatever')
 
-      expect(page).to have_selector('.flash.error', text: I18n.t(:notice_account_otp_invalid))
+      expect(page).to have_selector('.op-toast.-error', text: I18n.t(:notice_account_otp_invalid))
       expect(page).to have_current_path signin_path
     end
   end

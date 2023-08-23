@@ -28,7 +28,7 @@
 
 require 'spec_helper'
 
-describe Activities::Fetcher, 'integration' do
+RSpec.describe Activities::Fetcher, 'integration' do
   shared_let(:user) { create(:user) }
   shared_let(:permissions) { %i[view_work_packages view_time_entries view_changesets view_wiki_edits] }
   shared_let(:role) { create(:role, permissions:) }
@@ -38,6 +38,11 @@ describe Activities::Fetcher, 'integration' do
 
   let(:instance) { described_class.new(user, options) }
   let(:options) { {} }
+
+  it 'does not find budgets in its event_types' do
+    expect(instance.event_types)
+      .not_to include('budgets')
+  end
 
   describe '#events' do
     let(:event_user) { user }
@@ -50,16 +55,15 @@ describe Activities::Fetcher, 'integration' do
     let(:changeset) { create(:changeset, committer: event_user.login, repository:) }
     let(:wiki) { create(:wiki, project:) }
     let(:wiki_page) do
-      content = build(:wiki_content, page: nil, author: event_user, text: 'some text')
-      create(:wiki_page, wiki:, content:)
+      create(:wiki_page, wiki:, author: event_user, text: 'some text')
     end
 
     subject { instance.events(from: 30.days.ago, to: 1.day.from_now) }
 
     context 'for global activities' do
-      let!(:activities) { [project, work_package, message, news, time_entry, changeset, wiki_page.content] }
+      let!(:activities) { [project, work_package, message, news, time_entry, changeset, wiki_page] }
 
-      it 'finds events of all type' do
+      it 'finds events of all types' do
         expect(subject.map(&:journable_id))
           .to match_array(activities.map(&:id))
       end
@@ -101,9 +105,9 @@ describe Activities::Fetcher, 'integration' do
 
     context 'for activities in a project' do
       let(:options) { { project: } }
-      let!(:activities) { [project, work_package, message, news, time_entry, changeset, wiki_page.content] }
+      let!(:activities) { [project, work_package, message, news, time_entry, changeset, wiki_page] }
 
-      it 'finds events of all type' do
+      it 'finds events of all types' do
         expect(subject.map(&:journable_id))
           .to match_array(activities.map(&:id))
       end
@@ -230,10 +234,10 @@ describe Activities::Fetcher, 'integration' do
       let!(:activities) do
         # Login to have all the journals created as the user
         login_as(user)
-        [project, work_package, message, news, time_entry, changeset, wiki_page.content]
+        [project, work_package, message, news, time_entry, changeset, wiki_page]
       end
 
-      it 'finds events of all type' do
+      it 'finds events of all types' do
         expect(subject.map(&:journable_id))
           .to match_array(activities.map(&:id))
       end
