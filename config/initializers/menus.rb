@@ -344,7 +344,7 @@ Redmine::MenuManager.map :admin_menu do |menu|
             { controller: '/attribute_help_texts' },
             caption: :'attribute_help_texts.label_plural',
             icon: 'help2',
-            if: Proc.new { User.current.admin? },
+            if: Proc.new { User.current.admin? }
             # enterprise_feature: 'attribute_help_texts'
 
   menu.push :enumerations,
@@ -483,7 +483,7 @@ Redmine::MenuManager.map :admin_menu do |menu|
             { controller: '/custom_styles', action: :show },
             if: Proc.new { User.current.admin? },
             caption: :label_custom_style,
-            icon: 'design',
+            icon: 'design'
             # enterprise_feature: 'define_custom_style'
 
   menu.push :colors,
