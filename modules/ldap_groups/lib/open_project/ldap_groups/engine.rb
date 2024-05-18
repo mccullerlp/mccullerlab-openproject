@@ -16,7 +16,7 @@ module OpenProject::LdapGroups
            parent: :authentication,
            last: true,
            caption: ->(*) { I18n.t("ldap_groups.label_menu_item") },
-           enterprise_feature: "ldap_groups"
+           # enterprise_feature: "ldap_groups"
     end
 
     add_cron_jobs do

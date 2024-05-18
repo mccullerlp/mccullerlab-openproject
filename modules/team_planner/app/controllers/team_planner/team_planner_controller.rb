@@ -6,7 +6,7 @@ module ::TeamPlanner
     before_action :build_plan_view, only: %i[new]
     before_action :authorize, except: %i[overview new create upsale]
     before_action :authorize_global, only: %i[overview new create]
-    before_action :require_ee_token, except: %i[upsale]
+    # before_action :require_ee_token, except: %i[upsale]
     before_action :find_plan_view, only: %i[destroy]
 
     menu_item :team_planner_view

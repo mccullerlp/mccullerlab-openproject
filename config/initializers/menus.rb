@@ -272,8 +272,8 @@ Redmine::MenuManager.map :admin_menu do |menu|
             { controller: "/placeholder_users" },
             if: Proc.new { User.current.admin? },
             caption: :label_placeholder_user_plural,
-            parent: :users_and_permissions,
-            enterprise_feature: "placeholder_users"
+            parent: :users_and_permissions
+            # enterprise_feature: 'placeholder_users'
 
   menu.push :groups,
             { controller: "/groups" },
@@ -365,8 +365,8 @@ Redmine::MenuManager.map :admin_menu do |menu|
             { controller: "/custom_actions" },
             if: Proc.new { User.current.admin? },
             caption: :"custom_actions.plural",
-            parent: :admin_work_packages,
-            enterprise_feature: "custom_actions"
+            parent: :admin_work_packages
+            # enterprise_feature: "custom_actions"
 
   menu.push :attribute_help_texts,
             { controller: "/attribute_help_texts" },
